@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gouvernement Français - Composition Interactive</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <h1>Composition du Gouvernement Français</h1>
+            <div class="header-actions">
+                <button id="loginBtn" class="btn btn-primary">Connexion</button>
+                <button id="logoutBtn" class="btn btn-secondary" style="display: none;">Déconnexion</button>
+                <button id="editModeBtn" class="btn btn-edit" style="display: none;">Mode Édition</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Sidebar Navigation -->
+            <aside class="sidebar">
+                <h2>Ministères</h2>
+                <div id="ministriesList" class="ministries-list">
+                    <!-- Ministries will be dynamically loaded here -->
+                </div>
+            </aside>
+
+            <!-- Visualization Area -->
+            <section class="visualization">
+                <div id="orgChart" class="org-chart">
+                    <!-- Organizational chart will be rendered here -->
+                </div>
+                <div id="detailPanel" class="detail-panel" style="display: none;">
+                    <div class="detail-header">
+                        <h2 id="detailName"></h2>
+                        <button id="closeDetailBtn" class="btn-close">×</button>
+                    </div>
+                    <div id="detailContent" class="detail-content">
+                        <!-- Member details will be displayed here -->
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Edit Modal -->
+        <div id="editModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">Ajouter / Modifier</h2>
+                    <button id="closeModalBtn" class="btn-close">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="editForm">
+                        <div class="form-group">
+                            <label for="memberName">Nom</label>
+                            <input type="text" id="memberName" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="memberRole">Rôle</label>
+                            <input type="text" id="memberRole" name="role" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="memberMinistry">Ministère</label>
+                            <select id="memberMinistry" name="ministry" required>
+                                <option value="">Sélectionner un ministère</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="memberSupervisor">Superviseur (optionnel)</label>
+                            <select id="memberSupervisor" name="supervisor">
+                                <option value="">Aucun (ministre)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="memberBio">Biographie</label>
+                            <textarea id="memberBio" name="bio" rows="4"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" id="saveDraftBtn" class="btn btn-secondary">Enregistrer brouillon</button>
+                            <button type="submit" class="btn btn-primary">Soumettre pour validation</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Modal -->
+        <div id="loginModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Connexion</h2>
+                    <button id="closeLoginModalBtn" class="btn-close">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="username">Nom d'utilisateur</label>
+                            <input type="text" id="username" name="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Mot de passe</label>
+                            <input type="password" id="password" name="password" required>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Se connecter</button>
+                        </div>
+                    </form>
+                    <div id="loginError" class="error-message" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Panel (for admins only) -->
+        <div id="adminPanel" class="admin-panel" style="display: none;">
+            <h3>Panneau d'administration</h3>
+            <div id="pendingChanges" class="pending-changes">
+                <!-- Pending changes will be listed here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
