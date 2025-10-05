@@ -16,6 +16,23 @@
     <ul id="list">Chargement…</ul>
     <div id="error" class="err"></div>
 
+    <!-- Formulaire d’ajout/modification de personne -->
+    <div id="person-form-container" style="margin-top:32px;padding:16px;border:1px solid #eee;max-width:340px;">
+      <h2 style="margin-top:0;font-size:1.1em;">Ajouter ou modifier une personne</h2>
+      <form id="person-form">
+        <div style="margin-bottom:12px;">
+          <label for="full_name" style="display:block;margin-bottom:4px;">Nom complet</label>
+          <input type="text" id="full_name" name="full_name" style="width:100%;padding:6px;" required>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label for="photo_url" style="display:block;margin-bottom:4px;">URL de la photo</label>
+          <input type="text" id="photo_url" name="photo_url" style="width:100%;padding:6px;" required>
+        </div>
+        <button type="submit" style="padding:8px 16px;">Enregistrer</button>
+      </form>
+      <div id="form-error" class="err"></div>
+    </div>
+
     <script>
       // >>> Mets bien TON URL et TA clé anon publique :
       const SUPABASE_URL = "https://sflfclyfwxvbuvrabnwf.supabase.co";
@@ -57,6 +74,44 @@
       }
 
       loadPersons();
+      // Gestion du formulaire d’ajout/modification
+      document.getElementById("person-form").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const fullName = document.getElementById("full_name").value.trim();
+        const photoUrl = document.getElementById("photo_url").value.trim();
+        const formError = document.getElementById("form-error");
+        formError.textContent = "";
+
+        if (!fullName || !photoUrl) {
+          formError.textContent = "Veuillez remplir tous les champs.";
+          return;
+        }
+
+        try {
+          const url = `${SUPABASE_URL}/rest/v1/persons`;
+          const body = JSON.stringify({ full_name: fullName, photo_url: photoUrl });
+          const res = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+              Prefer: "return=representation"
+            },
+            body
+          });
+          if (!res.ok) {
+            const text = await res.text();
+            formError.textContent = `Erreur ${res.status} ${res.statusText}\n${text}`;
+            return;
+          }
+          // Réinitialise le formulaire et recharge la liste
+          document.getElementById("person-form").reset();
+          loadPersons();
+        } catch (err) {
+          formError.textContent = String(err);
+        }
+      });
     </script>
   </body>
 </html>
