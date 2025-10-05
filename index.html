@@ -9,9 +9,8 @@
     <ul id="list">Chargement…</ul>
 
     <script>
-      const SUPABASE_URL = https://sflfclyfwxvbuvrabnwf.supabase.co
-      const SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmbGZjbHlmd3h2YnV2cmFibndmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2NTc1MDEsImV4cCI6MjA3NTIzMzUwMX0.iuOs3nxotZ5_cE3XZ-j41DW04Wksf9zMWYvyOxAHOE4 
-mangue-01102025;                         // ← à remplacer
+      const SUPABASE_URL = "https://sfflclyfwxvbuvrabnwf.supabase.co"; // ← entre guillemets !
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmZmxjbHlmd3h2YnV2cmFibnVyYWJud2YiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcyODQ0ODI4MywiZXhwIjoxNzYwMDI0MjgzfQ.fEEMqwsKQF0cxBzXbK5hDWQBB2thWzuhAejyT1tTWvY"; // ← ta vraie clé publique
 
       async function loadPersons() {
         const res = await fetch(`${SUPABASE_URL}/rest/v1/persons?select=*`, {
@@ -23,12 +22,13 @@ mangue-01102025;                         // ← à remplacer
         const data = await res.json();
         const ul = document.getElementById("list");
         ul.innerHTML = "";
-        data.forEach(p => {
+        data.forEach((p) => {
           const li = document.createElement("li");
           li.textContent = p.full_name;
           ul.appendChild(li);
         });
       }
+
       loadPersons();
     </script>
   </body>
