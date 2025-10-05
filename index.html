@@ -16,6 +16,19 @@
     <ul id="list">Chargement…</ul>
     <div id="error" class="err"></div>
 
+    <!-- Auth UI -->
+    <div id="authBox" style="display:grid;gap:8px;margin-bottom:12px">
+      <div id="auth-logged-out">
+        <input id="auth-email" type="email" placeholder="email@domaine.com" />
+        <button id="auth-login">Se connecter (lien magique)</button>
+      </div>
+      <div id="auth-logged-in" style="display:none">
+        Connecté : <span id="auth-who"></span>
+        <button id="auth-logout">Se déconnecter</button>
+      </div>
+      <div id="auth-msg" style="font-size:12px;color:#666"></div>
+    </div>
+
     <!-- Formulaire d’ajout/modification de personne -->
     <div id="person-form-container" style="margin-top:32px;padding:16px;border:1px solid #eee;max-width:340px;">
       <h2 style="margin-top:0;font-size:1.1em;">Ajouter ou modifier une personne</h2>
@@ -34,9 +47,9 @@
     </div>
 
     <script>
-      // >>> Mets bien TON URL et TA clé anon publique :
-      const SUPABASE_URL = "https://sflfclyfwxvbuvrabnwf.supabase.co";
-      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmbGZjbHlmd3h2YnV2cmFibndmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2NTc1MDEsImV4cCI6MjA3NTIzMzUwMX0.iuOs3nxotZ5_cE3XZ-j41DW04Wksf9zMWYvyOxAHOE4";
+  // Variables globales Supabase
+  window.SUPABASE_URL = "https://sflfclyfwxvbuvrabnwf.supabase.co";
+  window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmbGZjbHlmd3h2YnV2cmFibndmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2NTc1MDEsImV4cCI6MjA3NTIzMzUwMX0.iuOs3nxotZ5_cE3XZ-j41DW04Wksf9zMWYvyOxAHOE4";
 
       async function loadPersons() {
         const ul = document.getElementById("list");
@@ -44,7 +57,7 @@
         errBox.textContent = "";
 
         try {
-          const url = `${SUPABASE_URL}/rest/v1/persons?select=*`;
+    const url = `${window.SUPABASE_URL}/rest/v1/persons?select=*`;
           const res = await fetch(url, {
             headers: {
               apikey: SUPABASE_ANON_KEY,
@@ -88,7 +101,7 @@
         }
 
         try {
-          const url = `${SUPABASE_URL}/rest/v1/persons`;
+    const url = `${window.SUPABASE_URL}/rest/v1/persons`;
           const body = JSON.stringify({ full_name: fullName, photo_url: photoUrl });
           const res = await fetch(url, {
             method: "POST",
@@ -112,6 +125,66 @@
           formError.textContent = String(err);
         }
       });
+    </script>
+    <script type="module">
+      import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+  const supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+      const el = (id)=>document.getElementById(id);
+      const needsEditor = [
+        "btnEditToggle","btnAdd","btnLink","btnFinish",
+        "btnRename","btnDuplicate","btnDelete","btnSave"
+      ];
+
+      function setEditorEnabled(on){
+        needsEditor.forEach(id=>{
+          const b = el(id); if(!b) return;
+          b.disabled = !on; b.classList.toggle("muted", !on);
+        });
+      }
+
+      async function refreshAuth(){
+        const { data: { user } } = await supabase.auth.getUser();
+        const isLogged = !!user;
+
+        el("auth-logged-in").style.display  = isLogged ? "" : "none";
+        el("auth-logged-out").style.display = isLogged ? "none" : "";
+        el("auth-who").textContent = user?.email || "";
+
+        // Récupère le rôle applicatif
+        let isEditor = false;
+        if (user) {
+          const { data: rows } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          isEditor = rows ? ["editor","admin"].includes(rows.role) : false;
+        }
+        setEditorEnabled(isEditor);
+      }
+
+      // Login (magic link)
+      el("auth-login")?.addEventListener("click", async () => {
+        const email = el("auth-email").value.trim();
+        if (!email) return el("auth-msg").textContent = "Entre un email.";
+        const { error } = await supabase.auth.signInWithOtp({ email });
+        el("auth-msg").textContent = error ? ("Erreur : " + error.message)
+                                           : "Email envoyé ✅ Vérifie ta boîte mail.";
+      });
+
+      // Logout
+      el("auth-logout")?.addEventListener("click", async () => {
+        await supabase.auth.signOut();
+        await refreshAuth();
+      });
+
+      // Suivre les changements de session
+      supabase.auth.onAuthStateChange(async () => { refreshAuth(); });
+
+      // Démarrage
+      refreshAuth();
     </script>
   </body>
 </html>
