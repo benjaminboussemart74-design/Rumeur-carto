@@ -3,30 +3,57 @@
   <head>
     <meta charset="utf-8" />
     <title>Gouvernement – Demo Supabase</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body{font-family:system-ui,Arial,sans-serif;padding:24px}
+      li{margin:6px 0}
+      .err{color:#b00020;white-space:pre-wrap;margin-top:16px}
+      code{background:#f4f4f4;padding:2px 4px;border-radius:4px}
+    </style>
   </head>
   <body>
     <h1>Personnes</h1>
     <ul id="list">Chargement…</ul>
+    <div id="error" class="err"></div>
 
     <script>
-      const SUPABASE_URL = "https://sfflclyfwxvbuvrabnwf.supabase.co";
-      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmbGZjbHlmd3h2YnV2cmFibndmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2NTc1MDEsImV4cCI6MjA3NTIzMzUwMX0.iuOs3nxotZ5_cE3XZ-j41DW04Wksf9zMWYvyOxAHOE4"; // ← ta vraie clé publique
+      // >>> Mets bien TON URL et TA clé anon publique :
+      const SUPABASE_URL = "https://sflfclyfwxvbuvrabnwf.supabase.co";
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmbGZjbHlmd3h2YnV2cmFibndmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2NTc1MDEsImV4cCI6MjA3NTIzMzUwMX0.iuOs3nxotZ5_cE3XZ-j41DW04Wksf9zMWYvyOxAHOE4";
 
       async function loadPersons() {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/persons?select=*`, {
-          headers: {
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          },
-        });
-        const data = await res.json();
         const ul = document.getElementById("list");
-        ul.innerHTML = "";
-        data.forEach((p) => {
-          const li = document.createElement("li");
-          li.textContent = p.full_name;
-          ul.appendChild(li);
-        });
+        const errBox = document.getElementById("error");
+        errBox.textContent = "";
+
+        try {
+          const url = `${SUPABASE_URL}/rest/v1/persons?select=*`;
+          const res = await fetch(url, {
+            headers: {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            },
+          });
+
+          if (!res.ok) {
+            const text = await res.text();
+            errBox.textContent = `Erreur ${res.status} ${res.statusText}\n${text}`;
+            ul.textContent = "—";
+            return;
+          }
+
+          const data = await res.json();
+          ul.innerHTML = "";
+          data.forEach(p => {
+            const li = document.createElement("li");
+            li.textContent = p.full_name;
+            ul.appendChild(li);
+          });
+          if (data.length === 0) ul.textContent = "Aucune personne";
+        } catch (e) {
+          document.getElementById("error").textContent = String(e);
+          ul.textContent = "—";
+        }
       }
 
       loadPersons();
