@@ -5,18 +5,1645 @@
     <title>Gouvernement – Demo Supabase</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-      body{font-family:system-ui,Arial,sans-serif;padding:24px}
-      li{margin:6px 0}
-      .err{color:#b00020;white-space:pre-wrap;margin-top:16px}
-      code{background:#f4f4f4;padding:2px 4px;border-radius:4px}
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #f5f2e8;
+        transition: margin-left 0.3s ease;
+        margin-left: 0;
+        min-height: 100vh;
+        color: #333;
+      }
+      
+      /* Header avec bouton hamburger */
+      .header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 70px;
+        background: rgba(245, 242, 232, 0.95);
+        color: #333;
+        display: flex;
+        align-items: center;
+        padding: 0 30px;
+        z-index: 1001;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        backdrop-filter: blur(10px);
+      }
+      
+      .hamburger {
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        padding: 10px;
+        border-radius: 5px;
+        transition: background-color 0.2s;
+      }
+      
+      .hamburger:hover {
+        background-color: rgba(255,255,255,0.1);
+      }
+      
+      .hamburger span {
+        width: 25px;
+        height: 3px;
+        background-color: #333;
+        margin: 3px 0;
+        transition: 0.3s;
+        border-radius: 2px;
+      }
+      
+      .hamburger.active span:nth-child(1) {
+        transform: rotate(-45deg) translate(-5px, 6px);
+      }
+      
+      .hamburger.active span:nth-child(2) {
+        opacity: 0;
+      }
+      
+      .hamburger.active span:nth-child(3) {
+        transform: rotate(45deg) translate(-5px, -6px);
+      }
+      
+      .logo {
+        margin-left: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      
+      .logo img {
+        height: 40px;
+        width: auto;
+      }
+      
+      .logo-text {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      
+      /* Sidebar */
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: -300px;
+        width: 300px;
+        height: 100vh;
+        background: white;
+        transition: left 0.3s ease;
+        z-index: 1000;
+        box-shadow: 2px 0 15px rgba(0,0,0,0.1);
+        overflow-y: auto;
+      }
+      
+      .sidebar.active {
+        left: 0;
+      }
+      
+      .sidebar-header {
+        padding: 20px;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        margin-top: 70px;
+        border-bottom: 3px solid #f4d03f;
+      }
+      
+      .sidebar-menu {
+        padding: 20px 0;
+      }
+      
+      .menu-item {
+        display: block;
+        padding: 15px 20px;
+        color: #333;
+        text-decoration: none;
+        border-bottom: 1px solid #eee;
+        transition: all 0.2s;
+        cursor: pointer;
+        position: relative;
+      }
+      
+      .menu-item:hover {
+        background-color: #f8f9fa;
+        padding-left: 30px;
+      }
+      
+      .menu-item.has-dropdown::after {
+        content: '▼';
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        transition: transform 0.3s;
+        font-size: 12px;
+      }
+      
+      .menu-item.has-dropdown.active::after {
+        transform: translateY(-50%) rotate(180deg);
+      }
+      
+      .dropdown {
+        max-height: 0;
+        overflow: hidden;
+        background-color: #f8f9fa;
+        transition: max-height 0.3s ease;
+      }
+      
+      .dropdown.active {
+        max-height: 200px;
+      }
+      
+      .dropdown-item {
+        display: block;
+        padding: 12px 40px;
+        color: #666;
+        text-decoration: none;
+        border-bottom: 1px solid #e9ecef;
+        transition: all 0.2s;
+      }
+      
+      .dropdown-item:hover {
+        background-color: #e9ecef;
+        color: #333;
+        padding-left: 50px;
+      }
+      
+      /* Overlay */
+      .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+      
+      .overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+      
+      /* Main content */
+      .main-content {
+        margin-top: 70px;
+        padding: 60px 40px;
+        transition: margin-left 0.3s ease;
+        background: #f5f2e8;
+        min-height: calc(100vh - 70px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+      }
+      
+      /* Page d'accueil style Lecornu */
+      .home-hero {
+        text-align: left;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 100px 40px;
+        min-height: calc(100vh - 170px);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        position: relative;
+      }
+      
+      .rp-watermark {
+        position: absolute;
+        top: 50px;
+        right: 50px;
+        opacity: 0.1;
+        z-index: 0;
+      }
+      
+      .rp-watermark img {
+        height: 200px;
+        width: auto;
+      }
+      
+      .home-hero > * {
+        position: relative;
+        z-index: 1;
+      }
+      
+      .government-title {
+        font-size: 64px;
+        font-weight: 300;
+        color: #bbb;
+        letter-spacing: 6px;
+        text-transform: uppercase;
+        margin-bottom: 80px;
+        line-height: 1.1;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+      
+      .prime-minister-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 25px;
+        background: transparent;
+        padding: 0;
+        border: none;
+        max-width: 600px;
+      }
+      
+      .pm-photo {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 4px solid #FFD23F;
+        object-fit: cover;
+        background: #fff;
+        flex-shrink: 0;
+      }
+      
+      .pm-info {
+        text-align: left;
+        flex: 1;
+        padding-top: 5px;
+      }
+      
+      .pm-name {
+        font-size: 20px;
+        font-weight: 400;
+        color: #333;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+      
+      .pm-title {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 5px;
+        font-weight: 400;
+      }
+      
+      .pm-party {
+        font-size: 14px;
+        color: #888;
+        font-weight: 400;
+      }
+      
+      /* Footer RP */
+      .rp-footer {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        opacity: 0.7;
+        transition: opacity 0.3s ease;
+      }
+      
+      .rp-footer:hover {
+        opacity: 1;
+      }
+      
+      .rp-footer img {
+        height: 30px;
+        width: auto;
+      }
+      
+      @media (max-width: 768px) {
+        .government-title {
+          font-size: 36px;
+          letter-spacing: 3px;
+        }
+        
+        .prime-minister-card {
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+        }
+        
+        .pm-info {
+          text-align: center;
+        }
+        
+        .rp-watermark {
+          top: 20px;
+          right: 20px;
+        }
+        
+        .rp-watermark img {
+          height: 120px;
+        }
+        
+        .rp-footer {
+          bottom: 10px;
+          right: 10px;
+        }
+        
+        .rp-footer img {
+          height: 25px;
+        }
+      }      body.sidebar-open {
+        margin-left: 300px;
+      }
+      
+      body.sidebar-open .overlay {
+        display: none;
+      }
+      
+      /* Responsive */
+      @media (max-width: 768px) {
+        body.sidebar-open {
+          margin-left: 0;
+        }
+        
+        body.sidebar-open .overlay {
+          display: block;
+        }
+        
+        .main-content {
+          margin: 70px 10px 10px 10px;
+          padding: 20px 15px;
+        }
+        
+        .tree-container {
+          padding: 20px;
+        }
+        
+        .tree-header h2 {
+          font-size: 1.5em;
+          letter-spacing: 1px;
+        }
+        
+        .political-card {
+          min-width: 200px;
+          max-width: 250px;
+          margin: 10px;
+        }
+        
+        h1 {
+          font-size: 1.8em;
+          letter-spacing: 1px;
+        }
+      }
+      
+      /* Styles existants */
+      li { margin: 6px 0; }
+      .err { color: #b00020; white-space: pre-wrap; margin-top: 16px; }
+      code { background: #f4f4f4; padding: 2px 4px; border-radius: 4px; }
+      
+      h1 {
+        color: #1e3c72;
+        margin-bottom: 30px;
+        font-size: 2.5em;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        text-align: center;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        border-bottom: 3px solid #f4d03f;
+        padding-bottom: 15px;
+      }
+      
+      #person-form-container {
+        margin-top: 32px;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        max-width: 400px;
+      }
+      
+      #person-form-container h2 {
+        margin-top: 0;
+        font-size: 1.2em;
+        color: #333;
+        margin-bottom: 20px;
+      }
+      
+      input[type="text"], input[type="email"] {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e1e5e9;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+      }
+      
+      input[type="text"]:focus, input[type="email"]:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+      
+      button {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 14px 25px;
+        border: 2px solid transparent;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+      }
+      
+      button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(30, 60, 114, 0.4);
+        border-color: #f4d03f;
+      }
+      
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      
+      #authBox {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        max-width: 400px;
+      }
+      
+      /* Styles pour l'arbre hiérarchique du gouvernement */
+      .tree-container {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 20px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+        margin: 30px 0;
+        padding: 40px;
+        width: 100%;
+        max-width: none;
+        overflow-x: auto;
+        border: 2px solid #f4d03f;
+      }
+      
+      .tree-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e1e5e9;
+      }
+      
+      .tree-header h2 {
+        color: #1e3c72;
+        font-size: 2em;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        margin: 0;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+      }
+      
+      .tree-controls {
+        display: flex;
+        gap: 10px;
+      }
+      
+      .tree-btn {
+        padding: 12px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 25px;
+        border: 2px solid #f4d03f;
+        background: white;
+        color: #1e3c72;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      
+      .tree-btn:hover {
+        background: #f4d03f;
+        color: #1e3c72;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(244, 208, 63, 0.4);
+      }
+      
+      .tree-btn.active {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        border-color: #1e3c72;
+      }
+      
+      /* Structure de l'arbre gouvernemental */
+      .tree {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: #f5f5dc;
+        padding: 30px;
+        border-radius: 15px;
+        min-height: 600px;
+      }
+      
+      /* Niveau hiérarchique */
+      .hierarchy-level {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        margin: 30px 0;
+        position: relative;
+        width: 100%;
+        flex-wrap: wrap;
+      }
+      
+      .hierarchy-level.level-0 {
+        margin-top: 20px;
+        margin-bottom: 50px;
+      }
+      
+      /* Carte de personnalité politique - Style minimaliste */
+      .political-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: transparent;
+        padding: 15px 10px;
+        margin: 10px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        min-width: 140px;
+        max-width: 160px;
+      }
+      
+      /* Tailles de cartes selon la hiérarchie */
+      .political-card.premier-ministre {
+        min-width: 220px;
+        max-width: 250px;
+        padding: 25px 20px;
+        margin: 20px;
+      }
+      
+      .political-card.ministre-etat {
+        min-width: 190px;
+        max-width: 210px;
+        padding: 20px 15px;
+        margin: 15px;
+      }
+      
+      .political-card.ministre {
+        min-width: 160px;
+        max-width: 180px;
+        padding: 18px 12px;
+        margin: 12px;
+      }
+      
+      .political-card.secretaire-etat {
+        min-width: 140px;
+        max-width: 160px;
+        padding: 15px 10px;
+        margin: 10px;
+      }
+      
+      .political-card:hover {
+        transform: translateY(-5px);
+      }
+      
+      /* Couleurs des partis politiques selon l'image */
+      .political-card.party-modem {
+        --party-color: #FF6B35; /* Orange MoDem */
+      }
+      
+      .political-card.party-renaissance {
+        --party-color: #FFD23F; /* Jaune Renaissance */
+      }
+      
+      .political-card.party-republicains {
+        --party-color: #1F4E79; /* Bleu foncé LR */
+      }
+      
+      .political-card.party-horizons {
+        --party-color: #87CEEB; /* Bleu clair Horizons */
+      }
+      
+      .political-card.party-udi {
+        --party-color: #9966CC; /* Violet UDI */
+      }
+      
+      .political-card.party-radical {
+        --party-color: #DDA0DD; /* Violet clair Parti Radical */
+      }
+      
+      .political-card.party-divers-droite {
+        --party-color: #4682B4; /* Bleu Divers Droite */
+      }
+      
+      .political-card.party-divers-gauche {
+        --party-color: #FF1493; /* Rose Divers Gauche */
+      }
+      
+      .political-card.party-sans-etiquette {
+        --party-color: #A9A9A9; /* Gris Sans Étiquette */
+      }
+      
+      /* Photo du personnage politique - Style minimaliste avec tailles hiérarchiques */
+      .political-photo {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--party-color, #ccc);
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+      }
+      
+      /* Tailles selon la hiérarchie */
+      .political-card.premier-ministre .political-photo {
+        width: 120px;
+        height: 120px;
+        border-width: 5px;
+      }
+      
+      .political-card.ministre-etat .political-photo {
+        width: 100px;
+        height: 100px;
+        border-width: 4px;
+      }
+      
+      .political-card.ministre .political-photo {
+        width: 80px;
+        height: 80px;
+        border-width: 4px;
+      }
+      
+      .political-card.secretaire-etat .political-photo {
+        width: 60px;
+        height: 60px;
+        border-width: 3px;
+      }
+      
+      .political-card:hover .political-photo {
+        transform: scale(1.05);
+      }
+      
+      /* Informations du personnage */
+      .political-info {
+        text-align: center;
+        width: 100%;
+      }
+      
+      .political-name {
+        font-size: 12px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+        line-height: 1.2;
+        text-align: center;
+      }
+      
+      .political-function {
+        font-size: 10px;
+        color: #666;
+        font-weight: 400;
+        line-height: 1.3;
+        margin-bottom: 8px;
+        text-align: center;
+      }
+      
+      .political-party {
+        font-size: 9px;
+        background: var(--party-color, #ccc);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 8px;
+        display: inline-block;
+        font-weight: 500;
+      }
+      
+      /* Tailles de texte selon la hiérarchie */
+      .political-card.premier-ministre .political-name {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      
+      .political-card.premier-ministre .political-function {
+        font-size: 14px;
+        margin-bottom: 10px;
+      }
+      
+      .political-card.premier-ministre .political-party {
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 12px;
+      }
+      
+      .political-card.ministre-etat .political-name {
+        font-size: 16px;
+        font-weight: 650;
+        margin-bottom: 6px;
+      }
+      
+      .political-card.ministre-etat .political-function {
+        font-size: 12px;
+        margin-bottom: 9px;
+      }
+      
+      .political-card.ministre-etat .political-party {
+        font-size: 10px;
+        padding: 3px 8px;
+        border-radius: 10px;
+      }
+      
+      .political-card.ministre .political-name {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      
+      .political-card.ministre .political-function {
+        font-size: 11px;
+        margin-bottom: 8px;
+      }
+      
+      .political-card.ministre .political-party {
+        font-size: 9px;
+        padding: 3px 7px;
+        border-radius: 9px;
+      }
+      
+      /* Lignes de connexion - Style minimaliste */
+      .connection-line {
+        position: absolute;
+        background: #ddd;
+        z-index: 1;
+      }
+      
+      .vertical-line {
+        width: 2px;
+        height: 40px;
+        top: -40px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      
+      .horizontal-line {
+        height: 2px;
+        top: -40px;
+        z-index: 0;
+      }
+      
+      /* Conteneur pour les ministres d'un même niveau */
+      .ministers-group {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+        max-width: 1200px;
+      }
+      
+      /* Responsive */
+      @media (max-width: 768px) {
+        .ministers-group {
+          flex-direction: column;
+          align-items: center;
+        }
+        
+        .political-card {
+          min-width: 200px;
+          margin: 10px 0;
+        }
+        
+        .political-photo {
+          width: 100px;
+          height: 100px;
+        }
+        
+        .political-name {
+          font-size: 16px;
+        }
+        
+        .political-function {
+          font-size: 13px;
+        }
+      }
+      
+      /* Animation d'entrée */
+      @keyframes slideInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      .political-card {
+        animation: slideInUp 0.6s ease forwards;
+      }
+      
+      .political-card:nth-child(1) { animation-delay: 0.1s; }
+      .political-card:nth-child(2) { animation-delay: 0.2s; }
+      .political-card:nth-child(3) { animation-delay: 0.3s; }
+      .political-card:nth-child(4) { animation-delay: 0.4s; }
+      .political-card:nth-child(5) { animation-delay: 0.5s; }
+      
+      .tree-indent {
+        display: inline-block;
+        width: 20px;
+      }
+      
+      .tree-toggle {
+        width: 16px;
+        height: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 5px;
+        cursor: pointer;
+        user-select: none;
+        font-size: 12px;
+        border-radius: 2px;
+        transition: all 0.2s;
+      }
+      
+      .tree-toggle:hover {
+        background-color: #e0e0e0;
+      }
+      
+      .tree-toggle.expandable::before {
+        content: '▶';
+        color: #666;
+        transition: transform 0.2s;
+      }
+      
+      .tree-toggle.expanded::before {
+        transform: rotate(90deg);
+      }
+      
+      .tree-icon {
+        margin-right: 8px;
+        font-size: 14px;
+      }
+      
+      .tree-label {
+        flex: 1;
+        font-size: 14px;
+      }
+      
+      .tree-info {
+        font-size: 12px;
+        color: #666;
+        margin-left: 10px;
+      }
+      
+      .tree-children {
+        margin-left: 20px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+      }
+      
+      .tree-children.expanded {
+        max-height: 1000px;
+      }
+      
+      /* Types de nœuds */
+      .tree-node[data-type="person"] .tree-icon::before {
+        content: '👤';
+      }
+      
+      .tree-node[data-type="location"] .tree-icon::before {
+        content: '📍';
+      }
+      
+      .tree-node[data-type="rumor"] .tree-icon::before {
+        content: '💬';
+      }
+      
+      .tree-node[data-type="category"] .tree-icon::before {
+        content: '📁';
+      }
+      
+      .tree-node[data-type="root"] .tree-icon::before {
+        content: '🏠';
+      }
+      
+      /* Loading state */
+      .tree-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        color: #666;
+      }
+      
+      .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #e1e5e9;
+        border-top: 2px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 10px;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      /* Search dans l'arbre */
+      .tree-search {
+        margin-bottom: 15px;
+        position: relative;
+      }
+      
+      .tree-search input {
+        width: 100%;
+        padding: 10px 40px 10px 15px;
+        border: 2px solid #e1e5e9;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+      
+      .tree-search::after {
+        content: '🔍';
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #666;
+      }
+      
+      .tree-node.highlight {
+        background-color: #fff3cd !important;
+        border-left: 4px solid #ffc107 !important;
+      }
+      
+      /* Interface d'administration */
+      .admin-panel {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        margin: 20px 0;
+        padding: 30px;
+        display: none;
+      }
+      
+      .admin-panel.visible {
+        display: block;
+        animation: slideInUp 0.5s ease forwards;
+      }
+      
+      .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #e1e5e9;
+      }
+      
+      .admin-header h2 {
+        color: #2c3e50;
+        font-size: 1.5em;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .admin-tabs {
+        display: flex;
+        gap: 10px;
+      }
+      
+      .admin-tab {
+        padding: 10px 20px;
+        border: 2px solid #e1e5e9;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        color: #7f8c8d;
+      }
+      
+      .admin-tab.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: #667eea;
+      }
+      
+      .admin-tab:hover:not(.active) {
+        background: #f8f9fa;
+        border-color: #667eea;
+        color: #667eea;
+      }
+      
+      .admin-content {
+        display: none;
+      }
+      
+      .admin-content.active {
+        display: block;
+      }
+      
+      /* Formulaires d'administration */
+      .admin-form {
+        background: #f8f9fa;
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+      }
+      
+      .form-group {
+        margin-bottom: 20px;
+      }
+      
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #2c3e50;
+      }
+      
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e1e5e9;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s ease;
+        font-family: inherit;
+      }
+      
+      .form-group input:focus,
+      .form-group select:focus,
+      .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+      
+      .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+      }
+      
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      
+      @media (max-width: 768px) {
+        .form-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      
+      /* Boutons d'administration */
+      .admin-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+      }
+      
+      .btn-admin {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+      }
+      
+      .btn-secondary {
+        background: #6c757d;
+        color: white;
+      }
+      
+      .btn-secondary:hover {
+        background: #545b62;
+        transform: translateY(-2px);
+      }
+      
+      .btn-danger {
+        background: #dc3545;
+        color: white;
+      }
+      
+      .btn-danger:hover {
+        background: #c82333;
+        transform: translateY(-2px);
+      }
+      
+      .btn-success {
+        background: #28a745;
+        color: white;
+      }
+      
+      .btn-success:hover {
+        background: #218838;
+        transform: translateY(-2px);
+      }
+      
+      /* Liste des personnes pour édition */
+      .persons-list {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      }
+      
+      .person-item {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        border-bottom: 1px solid #e1e5e9;
+        transition: background-color 0.2s ease;
+      }
+      
+      .person-item:hover {
+        background-color: #f8f9fa;
+      }
+      
+      .person-item:last-child {
+        border-bottom: none;
+      }
+      
+      .person-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 15px;
+        border: 2px solid #e1e5e9;
+      }
+      
+      .person-info {
+        flex: 1;
+      }
+      
+      .person-name {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 4px;
+      }
+      
+      .person-role {
+        color: #7f8c8d;
+        font-size: 14px;
+      }
+      
+      .person-actions {
+        display: flex;
+        gap: 8px;
+      }
+      
+      .btn-icon {
+        width: 35px;
+        height: 35px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        font-size: 14px;
+      }
+      
+      .btn-edit {
+        background: #ffc107;
+        color: #212529;
+      }
+      
+      .btn-edit:hover {
+        background: #e0a800;
+        transform: scale(1.1);
+      }
+      
+      .btn-delete {
+        background: #dc3545;
+        color: white;
+      }
+      
+      .btn-delete:hover {
+        background: #c82333;
+        transform: scale(1.1);
+      }
+      
+      /* Messages d'alerte */
+      .alert {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border-left: 4px solid;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border-left-color: #28a745;
+      }
+      
+      .alert-error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border-left-color: #dc3545;
+      }
+      
+      .alert-warning {
+        background-color: #fff3cd;
+        color: #856404;
+        border-left-color: #ffc107;
+      }
+      
+      .alert-info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border-left-color: #17a2b8;
+      }
+      
+      /* Modal pour les confirmations */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 2000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .modal-overlay.active {
+        display: flex;
+      }
+      
+      .modal {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+        animation: modalSlideIn 0.3s ease;
+      }
+      
+      @keyframes modalSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-50px) scale(0.9);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      
+      .modal-header {
+        margin-bottom: 20px;
+      }
+      
+      .modal-title {
+        color: #2c3e50;
+        margin: 0;
+        font-size: 1.3em;
+      }
+      
+      .modal-body {
+        margin-bottom: 25px;
+        color: #495057;
+        line-height: 1.5;
+      }
+      
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+      }
     </style>
   </head>
   <body>
-    <h1>Personnes</h1>
-    <ul id="list">Chargement…</ul>
-    <div id="error" class="err"></div>
+    <!-- Header avec bouton hamburger -->
+    <div class="header">
+      <div class="hamburger" id="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="logo">
+        <img src="LogoRP&co bleu sans point.png" alt="Rumeur Publique" />
+        <span class="logo-text">Gouvernement</span>
+      </div>
+    </div>
 
-    <!-- Auth UI -->
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h3>Menu Principal</h3>
+      </div>
+      <nav class="sidebar-menu">
+        <a href="#" class="menu-item" id="dashboard">
+          🏠 Tableau de bord
+        </a>
+        <div class="menu-item has-dropdown" id="personnes-menu">
+          👥 Personnes
+        </div>
+        <div class="dropdown" id="personnes-dropdown">
+          <a href="#" class="dropdown-item" id="voir-personnes">Voir toutes les personnes</a>
+          <a href="#" class="dropdown-item" id="ajouter-personne">Ajouter une personne</a>
+          <a href="#" class="dropdown-item" id="gerer-personnes">Gérer les personnes</a>
+        </div>
+        <div class="menu-item has-dropdown" id="cartographie-menu">
+          🗺️ Cartographie
+        </div>
+        <div class="dropdown" id="cartographie-dropdown">
+          <a href="#" class="dropdown-item" id="voir-carte">Voir la carte</a>
+          <a href="#" class="dropdown-item" id="ajouter-lieu">Ajouter un lieu</a>
+          <a href="#" class="dropdown-item" id="gerer-lieux">Gérer les lieux</a>
+        </div>
+        <div class="menu-item has-dropdown" id="rumeurs-menu">
+          📢 Rumeurs
+        </div>
+        <div class="dropdown" id="rumeurs-dropdown">
+          <a href="#" class="dropdown-item" id="voir-rumeurs">Voir les rumeurs</a>
+          <a href="#" class="dropdown-item" id="ajouter-rumeur">Nouvelle rumeur</a>
+          <a href="#" class="dropdown-item" id="analyser-rumeurs">Analyser</a>
+        </div>
+        <a href="#" class="menu-item" id="administration">
+          🔧 Administration
+        </a>
+        <a href="#" class="menu-item" id="parametres">
+          ⚙️ Paramètres
+        </a>
+        <a href="#" class="menu-item" id="aide">
+          ❓ Aide
+        </a>
+      </nav>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Contenu principal -->
+    <div class="main-content">
+      <!-- Page d'accueil style Lecornu -->
+      <div class="home-hero" id="home-page">
+        <div class="rp-watermark">
+          <img src="LogoRP Blanc.png" alt="Rumeur Publique" />
+        </div>
+        <h1 class="government-title">Gouvernement Lecornu I</h1>
+        
+        <div class="prime-minister-card">
+          <img class="pm-photo" 
+               src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face" 
+               alt="François Lecornu">
+          <div class="pm-info">
+            <div class="pm-name">François Lecornu</div>
+            <div class="pm-title">Premier ministre</div>
+            <div class="pm-party">Renaissance</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Gouvernement Bayrou (caché par défaut) -->
+      <div id="government-tree" style="display: none;">
+        <div style="text-align: center; margin-bottom: 40px;">
+          <h1 style="background: linear-gradient(135deg, #1e3c72 0%, #f4d03f 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+            Gouvernement Bayrou I
+          </h1>
+          <div style="font-size: 18px; color: #6c757d; font-weight: 500; margin-top: 10px; letter-spacing: 2px;">
+            DÉCEMBRE 2024
+          </div>
+        </div>
+      
+      <!-- Arbre hiérarchique -->
+      <div class="tree-container">
+        <div class="tree-header">
+          <h2>�️ Hiérarchie du Gouvernement Français</h2>
+          <div class="tree-controls">
+            <button class="tree-btn" id="show-details">Voir Détails</button>
+            <button class="tree-btn" id="refresh-tree">Actualiser</button>
+            <button class="tree-btn" id="export-data">Exporter</button>
+          </div>
+        </div>
+        
+        <div class="tree-search">
+          <input type="text" id="tree-search" placeholder="Rechercher un ministre, une fonction...">
+        </div>
+        
+        <div id="government-stats" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 20px; border-radius: 15px; margin-bottom: 25px; font-size: 14px; color: #495057; border: 2px solid #f4d03f; box-shadow: 0 5px 15px rgba(0,0,0,0.1);"></div>
+        
+        <div style="text-align: center; margin-bottom: 15px;">
+          <button onclick="treeInstance.forceUseMockData()" style="padding: 8px 16px; background: #17a2b8; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 5px;">
+            🔧 Utiliser les données de test
+          </button>
+          <button onclick="treeInstance.debugInfo()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 5px;">
+            🐛 Infos de debug
+          </button>
+          <button onclick="adminManager.enableTestMode()" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 5px;">
+            🔓 Activer l'interface admin
+          </button>
+        </div>
+        
+        <div id="tree-container">
+          <div class="tree-loading" id="tree-loading">
+            <div class="spinner"></div>
+            Chargement de l'arbre hiérarchique...
+          </div>
+          <div class="tree" id="tree-view" style="display: none;"></div>
+        </div>
+      </div>
+      </div>
+      
+      <!-- Interface d'administration -->
+      <div class="admin-panel" id="admin-panel">
+        <div class="admin-header">
+          <h2>⚙️ Console d'Administration</h2>
+          <div class="admin-tabs">
+            <div class="admin-tab active" data-tab="add">➕ Ajouter</div>
+            <div class="admin-tab" data-tab="manage">📝 Gérer</div>
+            <div class="admin-tab" data-tab="settings">⚙️ Paramètres</div>
+          </div>
+        </div>
+
+        <!-- Onglet Ajouter une personne -->
+        <div class="admin-content active" id="admin-add">
+          <div class="admin-form">
+            <div id="mode-info" class="alert alert-info" style="margin-bottom: 20px; display: none;">
+              <span>ℹ️</span>
+              <div>
+                <strong>Mode de fonctionnement :</strong><br>
+                <span id="mode-description">Vérification en cours...</span>
+              </div>
+            </div>
+            <h3 style="margin-top: 0; color: #2c3e50;">Ajouter une nouvelle personne</h3>
+            <form id="add-person-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="add-full-name">Nom complet *</label>
+                  <input type="text" id="add-full-name" required placeholder="Ex: Jean Dupont">
+                </div>
+                <div class="form-group">
+                  <label for="add-role">Rôle *</label>
+                  <select id="add-role" required>
+                    <option value="">Sélectionner un rôle</option>
+                    <option value="leader">Premier Ministre</option>
+                    <option value="minister">Ministre</option>
+                    <option value="minister-state">Ministre d'État</option>
+                    <option value="secretary">Secrétaire d'État</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="add-superior">Supérieur hiérarchique</label>
+                  <select id="add-superior">
+                    <option value="">Aucun supérieur (Premier Ministre)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="add-photo-url">URL de la photo</label>
+                  <input type="url" id="add-photo-url" placeholder="https://example.com/photo.jpg">
+                </div>
+              </div>
+              
+              <div class="admin-buttons">
+                <button type="submit" class="btn-admin btn-primary">
+                  ➕ Ajouter la personne
+                </button>
+                <button type="button" class="btn-admin btn-secondary" onclick="adminManager.resetAddForm()">
+                  🔄 Réinitialiser
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Onglet Gérer les personnes -->
+        <div class="admin-content" id="admin-manage">
+          <div class="admin-form">
+            <h3 style="margin-top: 0; color: #2c3e50;">Modifier une personne existante</h3>
+            <form id="edit-person-form" style="display: none;">
+              <input type="hidden" id="edit-person-id">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="edit-full-name">Nom complet *</label>
+                  <input type="text" id="edit-full-name" required>
+                </div>
+                <div class="form-group">
+                  <label for="edit-role">Rôle *</label>
+                  <select id="edit-role" required>
+                    <option value="leader">Premier Ministre</option>
+                    <option value="minister">Ministre</option>
+                    <option value="minister-state">Ministre d'État</option>
+                    <option value="secretary">Secrétaire d'État</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="edit-superior">Supérieur hiérarchique</label>
+                  <select id="edit-superior">
+                    <option value="">Aucun supérieur</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="edit-photo-url">URL de la photo</label>
+                  <input type="url" id="edit-photo-url">
+                </div>
+              </div>
+              
+              <div class="admin-buttons">
+                <button type="submit" class="btn-admin btn-success">
+                  💾 Sauvegarder les modifications
+                </button>
+                <button type="button" class="btn-admin btn-secondary" onclick="adminManager.cancelEdit()">
+                  ❌ Annuler
+                </button>
+              </div>
+            </form>
+          </div>
+          
+          <div class="persons-list" id="persons-list">
+            <div style="padding: 20px; text-align: center; color: #7f8c8d;">
+              Chargement de la liste des personnes...
+            </div>
+          </div>
+        </div>
+
+        <!-- Onglet Paramètres -->
+        <div class="admin-content" id="admin-settings">
+          <div class="admin-form">
+            <h3 style="margin-top: 0; color: #2c3e50;">Paramètres du système</h3>
+            <div class="alert alert-info">
+              <span>ℹ️</span>
+              <div>
+                <strong>Votre rôle :</strong> <span id="user-role-display">Chargement...</span><br>
+                <strong>Email :</strong> <span id="user-email-display">Chargement...</span>
+              </div>
+            </div>
+            
+            <div class="admin-buttons">
+              <button class="btn-admin btn-primary" onclick="adminManager.exportData()">
+                � Exporter les données
+              </button>
+              <button class="btn-admin btn-secondary" onclick="adminManager.refreshHierarchy()">
+                🔄 Actualiser l'arborescence
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section des personnes (existante) -->
+      <div style="margin-top: 40px;">
+        <h2>👥 Liste des Personnes</h2>
+        <ul id="list">Chargement…</ul>
+        <div id="error" class="err"></div>    <!-- Auth UI -->
     <div id="authBox" style="display:grid;gap:8px;margin-bottom:12px">
       <div id="auth-logged-out">
         <input id="auth-email" type="email" placeholder="email@domaine.com" />
@@ -45,11 +1672,84 @@
       </form>
       <div id="form-error" class="err"></div>
     </div>
+    </div> <!-- Fin du main-content -->
+
+    <!-- Modal de confirmation -->
+    <div class="modal-overlay" id="confirm-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title" id="modal-title">Confirmation</h3>
+        </div>
+        <div class="modal-body" id="modal-body">
+          Êtes-vous sûr de vouloir effectuer cette action ?
+        </div>
+        <div class="modal-actions">
+          <button class="btn-admin btn-secondary" onclick="adminManager.closeModal()">Annuler</button>
+          <button class="btn-admin btn-danger" id="modal-confirm-btn" onclick="adminManager.confirmAction()">Confirmer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zone pour les alertes -->
+    <div id="alerts-container" style="position: fixed; top: 80px; right: 20px; z-index: 1500; max-width: 400px;"></div>
 
     <script>
   // Variables globales Supabase
   window.SUPABASE_URL = "https://sflfclyfwxvbuvrabnwf.supabase.co";
   window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmbGZjbHlmd3h2YnV2cmFibndmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2NTc1MDEsImV4cCI6MjA3NTIzMzUwMX0.iuOs3nxotZ5_cE3XZ-j41DW04Wksf9zMWYvyOxAHOE4";
+
+  /*
+  IMPORTANT: Exécutez ces requêtes SQL dans votre console Supabase pour créer les tables nécessaires :
+
+  -- 1. Créer la table user_roles pour gérer les permissions
+  CREATE TABLE user_roles (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    role TEXT NOT NULL CHECK (role IN ('viewer', 'editor', 'admin')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id)
+  );
+
+  -- 2. Activer RLS (Row Level Security)
+  ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+
+  -- 3. Politique pour que les utilisateurs puissent voir leur propre rôle
+  CREATE POLICY "Users can view their own role" ON user_roles
+    FOR SELECT USING (auth.uid() = user_id);
+
+  -- 4. Politique pour que les admins puissent gérer tous les rôles
+  CREATE POLICY "Admins can manage all roles" ON user_roles
+    FOR ALL USING (
+      EXISTS (
+        SELECT 1 FROM user_roles 
+        WHERE user_id = auth.uid() AND role = 'admin'
+      )
+    );
+
+  -- 5. Mettre à jour la table persons pour inclure les champs nécessaires
+  ALTER TABLE persons ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'minister';
+  ALTER TABLE persons ADD COLUMN IF NOT EXISTS superior_id UUID REFERENCES persons(id);
+
+  -- 6. Politique RLS pour la table persons
+  ALTER TABLE persons ENABLE ROW LEVEL SECURITY;
+
+  -- 7. Tous peuvent voir les personnes
+  CREATE POLICY "Everyone can view persons" ON persons
+    FOR SELECT USING (true);
+
+  -- 8. Seuls les editors et admins peuvent modifier
+  CREATE POLICY "Editors and admins can modify persons" ON persons
+    FOR INSERT, UPDATE, DELETE USING (
+      EXISTS (
+        SELECT 1 FROM user_roles 
+        WHERE user_id = auth.uid() AND role IN ('editor', 'admin')
+      )
+    );
+
+  -- 9. Insérer un premier utilisateur admin (remplacez l'email par le vôtre)
+  -- INSERT INTO user_roles (user_id, role) 
+  -- SELECT id, 'admin' FROM auth.users WHERE email = 'votre-email@example.com';
+  */
 
       async function loadPersons() {
         const ul = document.getElementById("list");
@@ -186,5 +1886,1520 @@
       // Démarrage
       refreshAuth();
     </script>
+
+    <!-- Script pour la sidebar et les menus déroulants -->
+    <script>
+      // Gestion de la sidebar
+      function initSidebar() {
+        const hamburger = document.getElementById('hamburger');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const body = document.body;
+
+        // Toggle sidebar
+        function toggleSidebar() {
+          hamburger.classList.toggle('active');
+          sidebar.classList.toggle('active');
+          overlay.classList.toggle('active');
+          
+          // Sur desktop, décaler le contenu
+          if (window.innerWidth > 768) {
+            body.classList.toggle('sidebar-open');
+          }
+        }
+
+        // Fermer la sidebar
+        function closeSidebar() {
+          hamburger.classList.remove('active');
+          sidebar.classList.remove('active');
+          overlay.classList.remove('active');
+          body.classList.remove('sidebar-open');
+        }
+
+        // Event listeners
+        hamburger.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', closeSidebar);
+
+        // Fermer avec Escape
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && sidebar.classList.contains('active')) {
+            closeSidebar();
+          }
+        });
+
+        // Gestion responsive
+        window.addEventListener('resize', () => {
+          if (window.innerWidth <= 768) {
+            body.classList.remove('sidebar-open');
+          } else if (sidebar.classList.contains('active')) {
+            body.classList.add('sidebar-open');
+          }
+        });
+      }
+
+      // Gestion des menus déroulants
+      function initDropdowns() {
+        const dropdownMenus = document.querySelectorAll('.menu-item.has-dropdown');
+        
+        dropdownMenus.forEach(menu => {
+          menu.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Trouver le dropdown correspondant
+            const dropdownId = menu.id.replace('-menu', '-dropdown');
+            const dropdown = document.getElementById(dropdownId);
+            
+            if (dropdown) {
+              // Toggle le menu actuel
+              menu.classList.toggle('active');
+              dropdown.classList.toggle('active');
+              
+              // Fermer les autres menus
+              dropdownMenus.forEach(otherMenu => {
+                if (otherMenu !== menu) {
+                  otherMenu.classList.remove('active');
+                  const otherDropdownId = otherMenu.id.replace('-menu', '-dropdown');
+                  const otherDropdown = document.getElementById(otherDropdownId);
+                  if (otherDropdown) {
+                    otherDropdown.classList.remove('active');
+                  }
+                }
+              });
+            }
+          });
+        });
+
+        // Gestion des clics sur les items du menu principal
+        const menuItems = document.querySelectorAll('.menu-item:not(.has-dropdown)');
+        menuItems.forEach(item => {
+          item.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Fermer la sidebar sur mobile
+            if (window.innerWidth <= 768) {
+              const sidebar = document.getElementById('sidebar');
+              const overlay = document.getElementById('overlay');
+              const hamburger = document.getElementById('hamburger');
+              
+              sidebar.classList.remove('active');
+              overlay.classList.remove('active');
+              hamburger.classList.remove('active');
+            }
+            
+            // Navigation selon l'item
+            switch(item.id) {
+              case 'administration':
+                if (adminManager && adminManager.canEdit()) {
+                  document.getElementById('admin-panel').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  adminManager?.showAlert('Vous devez être connecté avec des droits d\'édition pour accéder à l\'administration', 'warning');
+                }
+                break;
+              case 'dashboard':
+                document.getElementById('tree-container').scrollIntoView({ behavior: 'smooth' });
+                break;
+              // Ajouter d'autres cas
+            }
+          });
+        });
+        
+        // Gestion des clics sur les items du dropdown
+        const dropdownItems = document.querySelectorAll('.dropdown-item');
+        dropdownItems.forEach(item => {
+          item.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Fermer la sidebar sur mobile après sélection
+            if (window.innerWidth <= 768) {
+              const sidebar = document.getElementById('sidebar');
+              const overlay = document.getElementById('overlay');
+              const hamburger = document.getElementById('hamburger');
+              
+              sidebar.classList.remove('active');
+              overlay.classList.remove('active');
+              hamburger.classList.remove('active');
+            }
+            
+            // Ici vous pouvez ajouter la logique pour chaque item du menu
+            console.log('Menu item clicked:', item.textContent.trim());
+            
+            // Exemple de navigation
+            switch(item.id) {
+              case 'voir-personnes':
+                // Afficher la section des personnes
+                document.getElementById('list').scrollIntoView({ behavior: 'smooth' });
+                break;
+              case 'ajouter-personne':
+                // Scroll vers le formulaire d'ajout
+                if (adminManager && adminManager.canEdit()) {
+                  adminManager.switchTab('add');
+                  document.getElementById('admin-panel').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  document.getElementById('person-form-container').scrollIntoView({ behavior: 'smooth' });
+                }
+                break;
+              case 'voir-carte':
+                // Afficher la cartographie
+                break;
+              // Ajouter d'autres cas selon vos besoins
+            }
+          });
+        });
+      }
+
+      // Navigation entre les pages
+      function showHomePage() {
+        document.getElementById('home-page').style.display = 'block';
+        document.getElementById('government-tree').style.display = 'none';
+        document.getElementById('admin-panel').classList.remove('visible');
+      }
+      
+      function showGovernmentTree() {
+        document.getElementById('home-page').style.display = 'none';
+        document.getElementById('government-tree').style.display = 'block';
+        document.getElementById('admin-panel').classList.remove('visible');
+      }
+      
+      function showAdminPanel() {
+        document.getElementById('home-page').style.display = 'none';
+        document.getElementById('government-tree').style.display = 'none';
+        document.getElementById('admin-panel').classList.add('visible');
+      }
+
+      // Initialisation au chargement de la page
+      document.addEventListener('DOMContentLoaded', () => {
+        initSidebar();
+        initDropdowns();
+        initHierarchicalTree();
+        initAdminInterface();
+        
+        // Navigation dans le menu
+        document.getElementById('dashboard').addEventListener('click', (e) => {
+          e.preventDefault();
+          showHomePage();
+        });
+        
+        document.getElementById('voir-personnes').addEventListener('click', (e) => {
+          e.preventDefault();
+          showGovernmentTree();
+        });
+        
+        document.getElementById('administration').addEventListener('click', (e) => {
+          e.preventDefault();
+          showAdminPanel();
+        });
+        
+        // Afficher la page d'accueil par défaut
+        showHomePage();
+      });
+    </script>
+
+    <!-- Script pour l'interface d'administration -->
+    <script>
+      class AdminManager {
+        constructor() {
+          this.currentUser = null;
+          this.userRole = null;
+          this.persons = [];
+          this.editingPersonId = null;
+          this.pendingAction = null;
+        }
+
+        async init() {
+          console.log('Initialisation de l\'interface d\'administration...');
+          
+          // D'abord bind les events pour que l'interface fonctionne
+          this.bindEvents();
+          
+          // Ensuite vérifier les permissions
+          await this.checkUserPermissions();
+          
+          // Charger les données si l'utilisateur peut éditer
+          if (this.canEdit()) {
+            console.log('Chargement des données pour l\'administration...');
+            try {
+              await this.loadPersonsForAdmin();
+              this.populateSuperiorSelects();
+              this.updateModeInfo();
+            } catch (error) {
+              console.error('Erreur lors du chargement des données d\'administration:', error);
+            }
+          }
+          
+          console.log('Interface d\'administration initialisée');
+        }
+
+        async checkUserPermissions() {
+          try {
+            // Vérifier si Supabase est disponible
+            if (!window.supabase) {
+              console.log('Supabase non initialisé, mode déconnecté');
+              this.currentUser = null;
+              this.userRole = null;
+              this.hideAdminPanel();
+              return;
+            }
+
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            
+            if (authError) {
+              console.log('Pas d\'utilisateur connecté:', authError.message);
+              this.currentUser = null;
+              this.userRole = null;
+              this.hideAdminPanel();
+              return;
+            }
+
+            this.currentUser = user;
+            
+            if (user) {
+              console.log('Utilisateur connecté:', user.email);
+              
+              try {
+                // Récupérer le rôle de l'utilisateur
+                const { data: roleData, error: roleError } = await supabase
+                  .from('user_roles')
+                  .select('role')
+                  .eq('user_id', user.id)
+                  .maybeSingle(); // Utiliser maybeSingle au lieu de single pour éviter l'erreur si pas de résultat
+                
+                if (roleError) {
+                  console.log('Erreur récupération rôle ou table user_roles inexistante:', roleError.message);
+                  // Si la table n'existe pas ou autre erreur, donner un rôle par défaut
+                  this.userRole = 'editor'; // Temporairement pour les tests
+                } else {
+                  this.userRole = roleData?.role || 'viewer';
+                }
+                
+                console.log('Rôle utilisateur:', this.userRole);
+                
+                // Afficher l'interface d'admin si l'utilisateur peut éditer
+                if (this.canEdit()) {
+                  document.getElementById('admin-panel').classList.add('visible');
+                  console.log('Interface d\'administration activée');
+                } else {
+                  this.hideAdminPanel();
+                }
+                
+                // Mettre à jour l'affichage des informations utilisateur
+                this.updateUserDisplay(user.email, this.userRole);
+                
+              } catch (roleError) {
+                console.log('Erreur lors de la récupération du rôle, utilisation du mode viewer:', roleError);
+                this.userRole = 'viewer';
+                this.hideAdminPanel();
+                this.updateUserDisplay(user.email, 'viewer (par défaut)');
+              }
+              
+            } else {
+              console.log('Aucun utilisateur connecté');
+              this.userRole = null;
+              this.hideAdminPanel();
+            }
+          } catch (error) {
+            console.error('Erreur générale lors de la vérification des permissions:', error);
+            // Ne pas afficher d'alerte d'erreur, juste logger
+            this.userRole = null;
+            this.hideAdminPanel();
+          }
+        }
+
+        hideAdminPanel() {
+          const adminPanel = document.getElementById('admin-panel');
+          if (adminPanel) {
+            adminPanel.classList.remove('visible');
+          }
+        }
+
+        updateUserDisplay(email, role) {
+          const roleElement = document.getElementById('user-role-display');
+          const emailElement = document.getElementById('user-email-display');
+          
+          if (roleElement) roleElement.textContent = role;
+          if (emailElement) emailElement.textContent = email;
+        }
+
+        canEdit() {
+          return this.userRole && ['editor', 'admin'].includes(this.userRole);
+        }
+
+        canDelete() {
+          return this.userRole === 'admin';
+        }
+
+        bindEvents() {
+          // Gestion des onglets
+          document.querySelectorAll('.admin-tab').forEach(tab => {
+            tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
+          });
+
+          // Formulaire d'ajout
+          document.getElementById('add-person-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.addPerson();
+          });
+
+          // Formulaire de modification
+          document.getElementById('edit-person-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.updatePerson();
+          });
+
+          // Écouter les changements d'authentification
+          supabase.auth.onAuthStateChange(async (event, session) => {
+            await this.checkUserPermissions();
+            if (this.canEdit()) {
+              await this.loadPersonsForAdmin();
+              this.populateSuperiorSelects();
+            }
+          });
+        }
+
+        switchTab(tabName) {
+          // Mettre à jour les onglets
+          document.querySelectorAll('.admin-tab').forEach(tab => {
+            tab.classList.remove('active');
+          });
+          document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+          // Mettre à jour le contenu
+          document.querySelectorAll('.admin-content').forEach(content => {
+            content.classList.remove('active');
+          });
+          document.getElementById(`admin-${tabName}`).classList.add('active');
+        }
+
+        async loadPersonsForAdmin() {
+          if (!window.supabase) {
+            this.showAlert('Supabase n\'est pas configuré. Vérifiez votre configuration.', 'error');
+            return;
+          }
+
+          try {
+            const { data, error } = await supabase
+              .from('persons')
+              .select('*')
+              .order('full_name');
+
+            if (error) throw error;
+
+            this.persons = data || [];
+            this.renderPersonsList();
+          } catch (error) {
+            console.error('Erreur lors du chargement des personnes:', error);
+            this.showAlert(`Erreur lors du chargement des personnes: ${error.message}`, 'error');
+            this.persons = [];
+            this.renderPersonsList();
+          }
+        }
+
+        renderPersonsList() {
+          const container = document.getElementById('persons-list');
+          
+          if (this.persons.length === 0) {
+            container.innerHTML = `
+              <div style="padding: 40px; text-align: center; color: #7f8c8d;">
+                <div style="font-size: 48px; margin-bottom: 16px;">👥</div>
+                <div>Aucune personne trouvée</div>
+              </div>
+            `;
+            return;
+          }
+
+          const html = this.persons.map(person => {
+            const superior = this.persons.find(p => p.id === person.superior_id);
+            const photoUrl = person.photo_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face';
+            
+            return `
+              <div class="person-item">
+                <img class="person-avatar" src="${photoUrl}" alt="${person.full_name}" 
+                     onerror="this.src='https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face'">
+                <div class="person-info">
+                  <div class="person-name">${person.full_name}</div>
+                  <div class="person-role">
+                    ${this.getRoleLabel(person.role)}
+                    ${superior ? ` • Sous ${superior.full_name}` : ''}
+                  </div>
+                </div>
+                <div class="person-actions">
+                  <button class="btn-icon btn-edit" onclick="adminManager.editPerson('${person.id}')" title="Modifier">
+                    ✏️
+                  </button>
+                  ${this.canDelete() ? `
+                    <button class="btn-icon btn-delete" onclick="adminManager.deletePerson('${person.id}')" title="Supprimer">
+                      🗑️
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          container.innerHTML = html;
+        }
+
+        getRoleLabel(role) {
+          const labels = {
+            'leader': 'Premier Ministre',
+            'minister': 'Ministre',
+            'minister-state': 'Ministre d\'État',
+            'secretary': 'Secrétaire d\'État'
+          };
+          return labels[role] || role;
+        }
+
+        populateSuperiorSelects() {
+          const addSelect = document.getElementById('add-superior');
+          const editSelect = document.getElementById('edit-superior');
+          
+          const options = this.persons.map(person => 
+            `<option value="${person.id}">${person.full_name} (${this.getRoleLabel(person.role)})</option>`
+          ).join('');
+
+          [addSelect, editSelect].forEach(select => {
+            if (select) {
+              const currentValue = select.value;
+              select.innerHTML = '<option value="">Aucun supérieur</option>' + options;
+              select.value = currentValue;
+            }
+          });
+        }
+
+        async addPerson() {
+          if (!this.canEdit()) {
+            this.showAlert('Vous n\'avez pas les permissions pour ajouter une personne', 'error');
+            return;
+          }
+
+          const formData = {
+            full_name: document.getElementById('add-full-name').value.trim(),
+            role: document.getElementById('add-role').value,
+            superior_id: document.getElementById('add-superior').value || null,
+            photo_url: document.getElementById('add-photo-url').value.trim() || null
+          };
+
+          if (!formData.full_name || !formData.role) {
+            this.showAlert('Veuillez remplir tous les champs obligatoires', 'warning');
+            return;
+          }
+
+          if (!window.supabase) {
+            this.showAlert('Supabase n\'est pas configuré. Vérifiez votre configuration.', 'error');
+            return;
+          }
+
+          try {
+            const { data, error } = await supabase
+              .from('persons')
+              .insert([formData])
+              .select();
+
+            if (error) throw error;
+
+            this.showAlert('Personne ajoutée avec succès !', 'success');
+            this.resetAddForm();
+            await this.loadPersonsForAdmin();
+            this.populateSuperiorSelects();
+            
+            // Actualiser l'arborescence
+            if (window.treeInstance) {
+              await window.treeInstance.refresh();
+            }
+
+          } catch (error) {
+            console.error('Erreur lors de l\'ajout:', error);
+            this.showAlert(`Erreur lors de l\'ajout de la personne: ${error.message}`, 'error');
+          }
+        }
+
+        editPerson(personId) {
+          const person = this.persons.find(p => p.id === personId);
+          if (!person) return;
+
+          this.editingPersonId = personId;
+          
+          // Pré-remplir le formulaire
+          document.getElementById('edit-person-id').value = personId;
+          document.getElementById('edit-full-name').value = person.full_name;
+          document.getElementById('edit-role').value = person.role;
+          document.getElementById('edit-superior').value = person.superior_id || '';
+          document.getElementById('edit-photo-url').value = person.photo_url || '';
+
+          // Afficher le formulaire et basculer vers l'onglet de gestion
+          document.getElementById('edit-person-form').style.display = 'block';
+          this.switchTab('manage');
+        }
+
+        async updatePerson() {
+          if (!this.canEdit() || !this.editingPersonId) return;
+
+          const formData = {
+            full_name: document.getElementById('edit-full-name').value.trim(),
+            role: document.getElementById('edit-role').value,
+            superior_id: document.getElementById('edit-superior').value || null,
+            photo_url: document.getElementById('edit-photo-url').value.trim() || null
+          };
+
+          if (!formData.full_name || !formData.role) {
+            this.showAlert('Veuillez remplir tous les champs obligatoires', 'warning');
+            return;
+          }
+
+          if (!window.supabase) {
+            this.showAlert('Supabase n\'est pas configuré. Vérifiez votre configuration.', 'error');
+            return;
+          }
+
+          try {
+            const { error } = await supabase
+              .from('persons')
+              .update(formData)
+              .eq('id', this.editingPersonId);
+
+            if (error) throw error;
+
+            this.showAlert('Personne modifiée avec succès !', 'success');
+            this.cancelEdit();
+            await this.loadPersonsForAdmin();
+            this.populateSuperiorSelects();
+            
+            // Actualiser l'arborescence
+            if (window.treeInstance) {
+              await window.treeInstance.refresh();
+            }
+
+          } catch (error) {
+            console.error('Erreur lors de la modification:', error);
+            this.showAlert(`Erreur lors de la modification de la personne: ${error.message}`, 'error');
+          }
+        }
+
+        deletePerson(personId) {
+          if (!this.canDelete()) {
+            this.showAlert('Vous n\'avez pas les permissions pour supprimer une personne', 'error');
+            return;
+          }
+
+          const person = this.persons.find(p => p.id === personId);
+          if (!person) return;
+
+          this.pendingAction = () => this.confirmDeletePerson(personId);
+          
+          this.showModal(
+            'Confirmer la suppression',
+            `Êtes-vous sûr de vouloir supprimer "${person.full_name}" ?<br><br>
+            <strong>⚠️ Cette action est irréversible.</strong>`,
+            'Supprimer'
+          );
+        }
+
+        async confirmDeletePerson(personId) {
+          if (!window.supabase) {
+            this.showAlert('Supabase n\'est pas configuré. Vérifiez votre configuration.', 'error');
+            return;
+          }
+
+          try {
+            const { error } = await supabase
+              .from('persons')
+              .delete()
+              .eq('id', personId);
+
+            if (error) throw error;
+
+            this.showAlert('Personne supprimée avec succès !', 'success');
+            await this.loadPersonsForAdmin();
+            this.populateSuperiorSelects();
+            
+            // Actualiser l'arborescence
+            if (window.treeInstance) {
+              await window.treeInstance.refresh();
+            }
+
+          } catch (error) {
+            console.error('Erreur lors de la suppression:', error);
+            this.showAlert(`Erreur lors de la suppression de la personne: ${error.message}`, 'error');
+          }
+        }
+
+        resetAddForm() {
+          document.getElementById('add-person-form').reset();
+        }
+
+        cancelEdit() {
+          this.editingPersonId = null;
+          document.getElementById('edit-person-form').style.display = 'none';
+          document.getElementById('edit-person-form').reset();
+        }
+
+        showModal(title, body, confirmText = 'Confirmer') {
+          document.getElementById('modal-title').textContent = title;
+          document.getElementById('modal-body').innerHTML = body;
+          document.getElementById('modal-confirm-btn').textContent = confirmText;
+          document.getElementById('confirm-modal').classList.add('active');
+        }
+
+        closeModal() {
+          document.getElementById('confirm-modal').classList.remove('active');
+          this.pendingAction = null;
+        }
+
+        confirmAction() {
+          if (this.pendingAction) {
+            this.pendingAction();
+            this.pendingAction = null;
+          }
+          this.closeModal();
+        }
+
+        showAlert(message, type = 'info') {
+          const container = document.getElementById('alerts-container');
+          const alertId = 'alert-' + Date.now();
+          
+          const alert = document.createElement('div');
+          alert.id = alertId;
+          alert.className = `alert alert-${type}`;
+          alert.style.cssText = `
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+          `;
+          
+          const icons = {
+            success: '✅',
+            error: '❌',
+            warning: '⚠️',
+            info: 'ℹ️'
+          };
+          
+          alert.innerHTML = `
+            <span>${icons[type] || icons.info}</span>
+            <div>${message}</div>
+          `;
+          
+          container.appendChild(alert);
+          
+          // Animation d'entrée
+          setTimeout(() => {
+            alert.style.opacity = '1';
+            alert.style.transform = 'translateX(0)';
+          }, 100);
+          
+          // Suppression automatique après 5 secondes
+          setTimeout(() => {
+            alert.style.opacity = '0';
+            alert.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+              if (alert.parentNode) {
+                alert.parentNode.removeChild(alert);
+              }
+            }, 300);
+          }, 5000);
+        }
+
+        async exportData() {
+          try {
+            const { data, error } = await supabase
+              .from('persons')
+              .select('*')
+              .order('full_name');
+
+            if (error) throw error;
+
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `gouvernement-export-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            this.showAlert('Données exportées avec succès !', 'success');
+          } catch (error) {
+            console.error('Erreur lors de l\'export:', error);
+            this.showAlert('Erreur lors de l\'export des données', 'error');
+          }
+        }
+
+        async refreshHierarchy() {
+          if (window.treeInstance) {
+            await window.treeInstance.refresh();
+            this.showAlert('Arborescence actualisée !', 'success');
+          }
+        }
+
+        forceUseMockData() {
+          console.log('Forçage des données de test...');
+          this.treeData = this.getMockData();
+          this.filteredData = this.treeData;
+          this.render();
+          console.log('Données de test chargées:', this.treeData);
+        }
+
+        debugInfo() {
+          console.log('=== DEBUG INFO ===');
+          console.log('TreeData:', this.treeData);
+          console.log('FilteredData:', this.filteredData);
+          console.log('Supabase URL:', window.SUPABASE_URL);
+          console.log('Has Supabase Key:', !!window.SUPABASE_ANON_KEY);
+          
+          // Test de connexion à Supabase
+          fetch(`${window.SUPABASE_URL}/rest/v1/persons?select=*&limit=1`, {
+            headers: {
+              apikey: window.SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${window.SUPABASE_ANON_KEY}`,
+            },
+          })
+          .then(response => {
+            console.log('Test connexion Supabase:', response.status, response.statusText);
+            return response.json();
+          })
+          .then(data => {
+            console.log('Test données Supabase:', data);
+          })
+          .catch(error => {
+            console.error('Erreur test Supabase:', error);
+          });
+
+          alert('Informations de debug dans la console (F12)');
+        }
+
+        enableTestMode() {
+          if (!window.supabase) {
+            this.showAlert('Supabase doit être configuré pour utiliser l\'interface d\'administration.', 'error');
+            return;
+          }
+
+          console.log('Activation du mode test admin...');
+          this.currentUser = { email: 'test@example.com', id: 'test-user-id' };
+          this.userRole = 'admin';
+          
+          // Afficher l'interface d'admin
+          document.getElementById('admin-panel').classList.add('visible');
+          
+          // Mettre à jour l'affichage
+          this.updateUserDisplay('test@example.com', 'admin (mode test)');
+          
+          // Charger les données
+          this.loadPersonsForAdmin();
+          
+          // Afficher les informations de mode
+          this.updateModeInfo();
+          
+          this.showAlert('Mode administrateur de test activé ! Configurez Supabase pour sauvegarder.', 'success');
+        }
+
+        updateModeInfo() {
+          const modeInfo = document.getElementById('mode-info');
+          const modeDescription = document.getElementById('mode-description');
+          
+          if (modeInfo && modeDescription) {
+            modeInfo.style.display = 'flex';
+            
+            if (!window.supabase) {
+              modeDescription.innerHTML = 'Supabase non configuré - Vérifiez votre configuration.';
+              modeInfo.className = 'alert alert-error';
+            } else {
+              // Test de connexion Supabase
+              this.testSupabaseConnection().then(connected => {
+                if (connected) {
+                  modeDescription.innerHTML = 'Connecté à Supabase - Prêt à fonctionner.';
+                  modeInfo.className = 'alert alert-success';
+                } else {
+                  modeDescription.innerHTML = 'Supabase configuré mais table \'persons\' manquante.<br>Exécutez les scripts SQL fournis dans les commentaires du code.';
+                  modeInfo.className = 'alert alert-warning';
+                }
+              });
+            }
+          }
+        }
+
+        async testSupabaseConnection() {
+          try {
+            const { data, error } = await supabase.from('persons').select('id').limit(1);
+            return !error;
+          } catch (error) {
+            return false;
+          }
+        }
+      }
+
+      // Instance globale du gestionnaire d'administration
+      let adminManager;
+
+      function initAdminInterface() {
+        adminManager = new AdminManager();
+        adminManager.init();
+      }
+    </script>
+
+    <!-- Script pour l'arbre hiérarchique -->
+    <script>
+      class HierarchicalTree {
+        constructor() {
+          this.treeData = [];
+          this.filteredData = [];
+          this.expandedNodes = new Set();
+          this.selectedNode = null;
+          this.searchTerm = '';
+        }
+
+        async init() {
+          this.bindEvents();
+          try {
+            await this.loadData();
+          } catch (error) {
+            console.error('Erreur lors de l\'initialisation:', error);
+            this.treeData = this.getMockData();
+            this.filteredData = this.treeData;
+          } finally {
+            this.render();
+          }
+        }
+
+        bindEvents() {
+          // Boutons de contrôle
+          document.getElementById('show-details').addEventListener('click', () => this.toggleDetailsView());
+          document.getElementById('refresh-tree').addEventListener('click', () => this.refresh());
+          document.getElementById('export-data').addEventListener('click', () => this.exportData());
+          
+          // Recherche
+          document.getElementById('tree-search').addEventListener('input', (e) => {
+            this.searchTerm = e.target.value.toLowerCase();
+            this.filter();
+            this.render();
+          });
+        }
+
+        toggleDetailsView() {
+          const cards = document.querySelectorAll('.political-card');
+          cards.forEach(card => {
+            const party = card.querySelector('.political-party');
+            if (party) {
+              party.style.display = party.style.display === 'none' ? 'inline-block' : 'none';
+            }
+          });
+        }
+
+        exportData() {
+          const data = JSON.stringify(this.treeData, null, 2);
+          const blob = new Blob([data], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'gouvernement-hierarchie.json';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          this.showNotification('Données exportées avec succès !');
+        }
+
+        async loadData() {
+          try {
+            // Charger les personnes depuis Supabase
+            const personsResponse = await fetch(`${window.SUPABASE_URL}/rest/v1/persons?select=*`, {
+              headers: {
+                apikey: window.SUPABASE_ANON_KEY,
+                Authorization: `Bearer ${window.SUPABASE_ANON_KEY}`,
+              },
+            });
+
+            if (personsResponse.ok) {
+              const persons = await personsResponse.json();
+              console.log('Personnes chargées depuis Supabase:', persons);
+              
+              // Créer la structure hiérarchique avec les vraies données
+              this.treeData = this.buildHierarchyFromSupabase(persons);
+            } else {
+              console.log('Erreur API, utilisation des données de test');
+              this.treeData = this.getMockData();
+            }
+            
+            this.filteredData = this.treeData;
+            
+          } catch (error) {
+            console.error('Erreur lors du chargement des données:', error);
+            this.treeData = this.getMockData();
+            this.filteredData = this.treeData;
+          }
+        }
+
+        buildHierarchyFromSupabase(persons) {
+          if (!persons || persons.length === 0) {
+            return this.getMockData();
+          }
+
+          // Organiser les personnes par rôle et hiérarchie
+          const gouvernement = {
+            premierMinistre: null,
+            ministresEtat: [],
+            ministres: [],
+            secretairesEtat: []
+          };
+
+          // Traiter chaque personne
+          persons.forEach(person => {
+            const personData = {
+              id: person.id,
+              type: this.getPersonType(person.role),
+              nom: this.extractLastName(person.full_name),
+              prenom: this.extractFirstName(person.full_name),
+              fonction: person.role || 'Fonction non définie',
+              parti: person.party || 'Non défini',
+              photo: person.photo_url || this.getDefaultPhoto()
+            };
+
+            // Classer selon le rôle
+            switch (person.role?.toLowerCase()) {
+              case 'leader':
+              case 'premier ministre':
+                gouvernement.premierMinistre = personData;
+                break;
+              case 'minister-state':
+              case 'ministre d\'état':
+                gouvernement.ministresEtat.push(personData);
+                break;
+              case 'minister':
+              case 'ministre':
+                gouvernement.ministres.push(personData);
+                break;
+              case 'secretary':
+              case 'secrétaire d\'état':
+                gouvernement.secretairesEtat.push(personData);
+                break;
+              default:
+                // Par défaut, traiter comme ministre
+                gouvernement.ministres.push(personData);
+                break;
+            }
+          });
+
+          // Si pas de Premier Ministre défini, en créer un avec la première personne
+          if (!gouvernement.premierMinistre && persons.length > 0) {
+            const firstPerson = persons[0];
+            gouvernement.premierMinistre = {
+              id: firstPerson.id,
+              type: 'premier-ministre',
+              nom: this.extractLastName(firstPerson.full_name),
+              prenom: this.extractFirstName(firstPerson.full_name),
+              fonction: 'Premier Ministre',
+              parti: 'Non défini',
+              photo: firstPerson.photo_url || this.getDefaultPhoto()
+            };
+          }
+
+          return gouvernement;
+        }
+
+        getPersonType(role) {
+          const roleMap = {
+            'leader': 'premier-ministre',
+            'premier ministre': 'premier-ministre',
+            'minister-state': 'ministre-etat',
+            'ministre d\'état': 'ministre-etat',
+            'minister': 'ministre',
+            'ministre': 'ministre',
+            'secretary': 'secretaire-etat',
+            'secrétaire d\'état': 'secretaire-etat'
+          };
+          return roleMap[role?.toLowerCase()] || 'ministre';
+        }
+
+        extractFirstName(fullName) {
+          if (!fullName) return 'Prénom';
+          const parts = fullName.trim().split(' ');
+          return parts[0] || 'Prénom';
+        }
+
+        extractLastName(fullName) {
+          if (!fullName) return 'Nom';
+          const parts = fullName.trim().split(' ');
+          return parts.slice(1).join(' ') || parts[0] || 'Nom';
+        }
+
+        getDefaultPhoto() {
+          const defaultPhotos = [
+            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+            'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+            'https://images.unsplash.com/photo-1494790108755-2616b612b999?w=150&h=150&fit=crop&crop=face',
+            'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
+          ];
+          return defaultPhotos[Math.floor(Math.random() * defaultPhotos.length)];
+        }
+
+        getMockData() {
+          // Données de test du gouvernement si la base de données n'est pas accessible
+          return {
+            premierMinistre: {
+              id: 'pm',
+              type: 'premier-ministre',
+              nom: 'Bayrou',
+              prenom: 'François',
+              fonction: 'Premier Ministre',
+              parti: 'MoDem',
+              photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+            },
+            ministresEtat: [
+              {
+                id: 'me1',
+                type: 'ministre-etat',
+                nom: 'Mignola',
+                prenom: 'Patrick',
+                fonction: 'Ministre délégué Relations avec le Parlement',
+                parti: 'MoDem',
+                photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+              }
+            ],
+            ministres: [
+              {
+                id: 'm1',
+                type: 'ministre',
+                nom: 'Bergé',
+                prenom: 'Aurore',
+                fonction: 'Ministre déléguée Égalité entre les femmes et les hommes',
+                parti: 'Renaissance',
+                photo: 'https://images.unsplash.com/photo-1494790108755-2616b612b999?w=150&h=150&fit=crop&crop=face'
+              },
+              {
+                id: 'm2',
+                type: 'ministre',
+                nom: 'Primas',
+                prenom: 'Sophie',
+                fonction: 'Ministre déléguée Porte-parole du Gouvernement',
+                parti: 'LR',
+                photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
+              },
+              {
+                id: 'm3',
+                type: 'ministre',
+                nom: 'Darmanin',
+                prenom: 'Gérald',
+                fonction: 'Ministre de l\'Intérieur',
+                parti: 'Renaissance',
+                photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face'
+              }
+            ],
+            secretairesEtat: [
+              {
+                id: 's1',
+                type: 'secretaire-etat',
+                nom: 'Lemoine',
+                prenom: 'Jean-Noël',
+                fonction: 'Secrétaire d\'État chargé de la Transition numérique',
+                parti: 'Renaissance',
+                photo: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&h=150&fit=crop&crop=face'
+              },
+              {
+                id: 's2',
+                type: 'secretaire-etat',
+                nom: 'Cluzel',
+                prenom: 'Sophie',
+                fonction: 'Secrétaire d\'État auprès du Premier ministre, chargée des Personnes handicapées',
+                parti: 'LREM',
+                photo: 'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=150&h=150&fit=crop&crop=face'
+              }
+            ]
+          };
+        }
+
+        filter() {
+          if (!this.searchTerm) {
+            this.filteredData = [...this.treeData];
+            return;
+          }
+
+          this.filteredData = this.filterNodes([...this.treeData], this.searchTerm);
+        }
+
+        filterNodes(nodes, searchTerm) {
+          return nodes.reduce((filtered, node) => {
+            const matchesSearch = node.label.toLowerCase().includes(searchTerm);
+            const filteredChildren = node.children ? this.filterNodes(node.children, searchTerm) : [];
+            
+            if (matchesSearch || filteredChildren.length > 0) {
+              filtered.push({
+                ...node,
+                children: filteredChildren,
+                highlight: matchesSearch
+              });
+            }
+            
+            return filtered;
+          }, []);
+        }
+
+        render() {
+          const treeView = document.getElementById('tree-view');
+          const loading = document.getElementById('tree-loading');
+          
+          try {
+            loading.style.display = 'none';
+            treeView.style.display = 'block';
+            
+            const hierarchyHtml = this.renderGovernmentHierarchy(this.treeData);
+            treeView.innerHTML = hierarchyHtml;
+            
+            this.updateStats();
+            
+            console.log('Arbre hiérarchique rendu avec succès');
+          } catch (error) {
+            console.error('Erreur lors du rendu:', error);
+            treeView.innerHTML = `
+              <div style="text-align: center; padding: 40px; color: #dc3545;">
+                <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+                <div>Erreur lors du chargement de l'arbre hiérarchique</div>
+                <div style="font-size: 14px; margin-top: 10px;">Veuillez actualiser la page</div>
+                <button onclick="location.reload()" style="margin-top: 15px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                  Actualiser
+                </button>
+              </div>
+            `;
+            loading.style.display = 'none';
+            treeView.style.display = 'block';
+          }
+        }
+
+        renderGovernmentHierarchy(gouvernement) {
+          if (!gouvernement) {
+            return `
+              <div style="text-align: center; padding: 40px; color: #7f8c8d;">
+                <div style="font-size: 48px; margin-bottom: 16px;">🏛️</div>
+                <div>Aucune donnée gouvernementale disponible</div>
+                <div style="font-size: 14px; margin-top: 10px;">Vérifiez votre connexion ou ajoutez des personnes via l'interface d'administration</div>
+              </div>
+            `;
+          }
+          
+          let html = '';
+          let hasData = false;
+          
+          // Premier Ministre (niveau 0)
+          if (gouvernement.premierMinistre) {
+            html += `
+              <div class="hierarchy-level level-0">
+                ${this.renderPoliticalCard(gouvernement.premierMinistre)}
+              </div>
+            `;
+            hasData = true;
+          }
+          
+          // Ministres d'État (niveau 1)
+          if (gouvernement.ministresEtat && gouvernement.ministresEtat.length > 0) {
+            html += `
+              <div class="hierarchy-level level-1">
+                <div class="ministers-group">
+                  ${gouvernement.ministresEtat.map(ministre => this.renderPoliticalCard(ministre)).join('')}
+                </div>
+              </div>
+            `;
+            hasData = true;
+          }
+          
+          // Ministres (niveau 2)
+          if (gouvernement.ministres && gouvernement.ministres.length > 0) {
+            html += `
+              <div class="hierarchy-level level-2">
+                <div class="ministers-group">
+                  ${gouvernement.ministres.map(ministre => this.renderPoliticalCard(ministre)).join('')}
+                </div>
+              </div>
+            `;
+            hasData = true;
+          }
+          
+          // Secrétaires d'État (niveau 3)
+          if (gouvernement.secretairesEtat && gouvernement.secretairesEtat.length > 0) {
+            html += `
+              <div class="hierarchy-level level-3">
+                <div class="ministers-group">
+                  ${gouvernement.secretairesEtat.map(secretaire => this.renderPoliticalCard(secretaire)).join('')}
+                </div>
+              </div>
+            `;
+            hasData = true;
+          }
+          
+          // Si aucune donnée, afficher un message
+          if (!hasData) {
+            html = `
+              <div style="text-align: center; padding: 40px; color: #7f8c8d;">
+                <div style="font-size: 48px; margin-bottom: 16px;">👥</div>
+                <div>Aucun membre du gouvernement trouvé</div>
+                <div style="font-size: 14px; margin-top: 10px;">Ajoutez des personnes via l'interface d'administration</div>
+              </div>
+            `;
+          }
+          
+          return html;
+        }
+
+        renderPoliticalCard(personnalite) {
+          // Détermine la classe de parti politique basée sur le parti
+          const partyClass = this.getPartyClass(personnalite.parti);
+          
+          return `
+            <div class="political-card ${personnalite.type} ${partyClass}" 
+                 data-id="${personnalite.id}" 
+                 onclick="treeInstance.selectPolitician('${personnalite.id}')">
+              <img class="political-photo" 
+                   src="${personnalite.photo}" 
+                   alt="${personnalite.prenom} ${personnalite.nom}"
+                   onerror="this.src='https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'">
+              
+              <div class="political-info">
+                <div class="political-name">
+                  ${personnalite.prenom} ${personnalite.nom}
+                </div>
+                <div class="political-function">
+                  ${personnalite.fonction}
+                </div>
+                <div class="political-party">
+                  ${personnalite.parti}
+                </div>
+              </div>
+            </div>
+          `;
+        }
+        
+        getPartyClass(parti) {
+          if (!parti) return 'party-sans-etiquette';
+          
+          const partiLower = parti.toLowerCase();
+          
+          if (partiLower.includes('modem') || partiLower.includes('mouvement démocrate')) {
+            return 'party-modem';
+          } else if (partiLower.includes('renaissance') || partiLower.includes('re') || partiLower.includes('en marche')) {
+            return 'party-renaissance';
+          } else if (partiLower.includes('républicains') || partiLower.includes('lr')) {
+            return 'party-republicains';
+          } else if (partiLower.includes('horizons')) {
+            return 'party-horizons';
+          } else if (partiLower.includes('udi') || partiLower.includes('union des démocrates')) {
+            return 'party-udi';
+          } else if (partiLower.includes('radical') || partiLower.includes('prv')) {
+            return 'party-radical';
+          } else if (partiLower.includes('divers droite')) {
+            return 'party-divers-droite';
+          } else if (partiLower.includes('divers gauche')) {
+            return 'party-divers-gauche';
+          } else {
+            return 'party-sans-etiquette';
+          }
+        }
+
+        toggleNode(nodeId) {
+          if (this.expandedNodes.has(nodeId)) {
+            this.expandedNodes.delete(nodeId);
+          } else {
+            this.expandedNodes.add(nodeId);
+          }
+          this.render();
+        }
+
+        selectPolitician(politicianId) {
+          // Retirer la sélection précédente
+          document.querySelectorAll('.political-card').forEach(card => {
+            card.classList.remove('selected');
+          });
+          
+          // Ajouter la sélection à la nouvelle carte
+          const selectedCard = document.querySelector(`[data-id="${politicianId}"]`);
+          if (selectedCard) {
+            selectedCard.classList.add('selected');
+          }
+          
+          this.selectedNode = politicianId;
+          
+          // Trouver la personnalité sélectionnée
+          const politician = this.findPolitician(this.treeData, politicianId);
+          if (politician) {
+            console.log('Personnalité sélectionnée:', politician);
+            this.showPoliticianDetails(politician);
+          }
+        }
+
+        findPolitician(gouvernement, politicianId) {
+          if (!gouvernement) return null;
+          
+          // Chercher dans le Premier Ministre
+          if (gouvernement.premierMinistre && gouvernement.premierMinistre.id === politicianId) {
+            return gouvernement.premierMinistre;
+          }
+          
+          // Chercher dans les Ministres d'État
+          if (gouvernement.ministresEtat) {
+            const found = gouvernement.ministresEtat.find(m => m.id === politicianId);
+            if (found) return found;
+          }
+          
+          // Chercher dans les Ministres
+          if (gouvernement.ministres) {
+            const found = gouvernement.ministres.find(m => m.id === politicianId);
+            if (found) return found;
+          }
+          
+          // Chercher dans les Secrétaires d'État
+          if (gouvernement.secretairesEtat) {
+            const found = gouvernement.secretairesEtat.find(s => s.id === politicianId);
+            if (found) return found;
+          }
+          
+          return null;
+        }
+
+        showPoliticianDetails(politician) {
+          // Créer une notification ou modal avec les détails
+          const details = `
+            <strong>${politician.prenom} ${politician.nom}</strong><br>
+            <em>${politician.fonction}</em><br>
+            Parti: ${politician.parti}<br>
+            Type: ${politician.type.replace('-', ' ').toUpperCase()}
+          `;
+          
+          // Pour l'instant, afficher dans la console (vous pouvez créer une modal plus tard)
+          console.log('Détails de la personnalité:', details);
+          
+          // Optionnel: afficher une notification temporaire
+          this.showNotification(`Sélectionné: ${politician.prenom} ${politician.nom} - ${politician.fonction}`);
+        }
+
+        showNotification(message) {
+          // Créer une notification temporaire
+          const notification = document.createElement('div');
+          notification.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-size: 14px;
+            max-width: 300px;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+          `;
+          notification.textContent = message;
+          
+          document.body.appendChild(notification);
+          
+          // Animer l'entrée
+          setTimeout(() => {
+            notification.style.opacity = '1';
+            notification.style.transform = 'translateX(0)';
+          }, 100);
+          
+          // Supprimer après 3 secondes
+          setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+              if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+              }
+            }, 300);
+          }, 3000);
+        }
+
+        findNode(nodes, nodeId) {
+          for (const node of nodes) {
+            if (node.id === nodeId) return node;
+            if (node.children) {
+              const found = this.findNode(node.children, nodeId);
+              if (found) return found;
+            }
+          }
+          return null;
+        }
+
+        showNodeDetails(node) {
+          // Afficher les détails du nœud sélectionné
+          let details = `<strong>${node.label}</strong><br>Type: ${node.type}`;
+          
+          if (node.data) {
+            details += `<br>Données: ${JSON.stringify(node.data, null, 2)}`;
+          }
+          
+          if (node.count !== undefined) {
+            details += `<br>Nombre d'éléments: ${node.count}`;
+          }
+          
+          // Vous pouvez créer une zone de détails ou utiliser une modal
+          console.log('Détails du nœud:', details);
+        }
+
+        // Méthodes utilitaires pour le gouvernement
+        getGovernmentStats() {
+          if (!this.treeData) return {};
+          
+          const stats = {
+            premierMinistre: this.treeData.premierMinistre ? 1 : 0,
+            ministresEtat: this.treeData.ministresEtat ? this.treeData.ministresEtat.length : 0,
+            ministres: this.treeData.ministres ? this.treeData.ministres.length : 0,
+            secretairesEtat: this.treeData.secretairesEtat ? this.treeData.secretairesEtat.length : 0
+          };
+          
+          stats.total = stats.premierMinistre + stats.ministresEtat + stats.ministres + stats.secretairesEtat;
+          
+          return stats;
+        }
+
+        updateStats() {
+          try {
+            const stats = this.getGovernmentStats();
+            const statsElement = document.getElementById('government-stats');
+            
+            if (statsElement) {
+              if (stats.total === 0) {
+                statsElement.innerHTML = `
+                  <div style="color: #856404;">
+                    <strong>⚠️ Aucune donnée gouvernementale</strong><br>
+                    Connectez-vous et ajoutez des membres du gouvernement via l'interface d'administration.
+                  </div>
+                `;
+              } else {
+                statsElement.innerHTML = `
+                  <strong>📊 Composition du Gouvernement:</strong><br>
+                  Premier Ministre: ${stats.premierMinistre}<br>
+                  Ministres d'État: ${stats.ministresEtat}<br>
+                  Ministres: ${stats.ministres}<br>
+                  Secrétaires d'État: ${stats.secretairesEtat}<br>
+                  <strong>Total: ${stats.total} membres</strong>
+                `;
+              }
+            }
+          } catch (error) {
+            console.error('Erreur lors de la mise à jour des statistiques:', error);
+          }
+        }
+
+        async refresh() {
+          document.getElementById('tree-loading').style.display = 'flex';
+          document.getElementById('tree-view').style.display = 'none';
+          
+          await this.loadData();
+          this.render();
+        }
+      }
+
+      // Instance globale de l'arbre
+      let treeInstance;
+
+      function initHierarchicalTree() {
+        treeInstance = new HierarchicalTree();
+        treeInstance.init();
+      }
+    </script>
+    
+    <!-- Footer avec logo RP -->
+    <div class="rp-footer">
+      <img src="LogoRP&co bleu sans point.png" alt="Rumeur Publique" title="Powered by Rumeur Publique" />
+    </div>
   </body>
 </html>
