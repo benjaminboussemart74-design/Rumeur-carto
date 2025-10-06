@@ -2467,74 +2467,34 @@
     </script>
     
     <!-- Init Supabase - Version compatible Vercel -->
-    <script type="module">
-      // Import avec fallback pour Vercel
-      let createClient;
-      try {
-        const supabaseModule = await import("https://esm.sh/@supabase/supabase-js@2");
-        createClient = supabaseModule.createClient;
-        console.log("✅ Module Supabase chargé via ESM");
-      } catch (importError) {
-        console.warn("⚠️ Fallback: import ESM échoué, tentative CDN...");
-        // Fallback vers CDN si ESM échoue
-        await new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-          script.onload = () => {
-            createClient = window.supabase?.createClient;
-            resolve();
-          };
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
-      }
+    <!-- Script Supabase CDN stable -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
 
-      // ✅ Solution propre : tout dans DOMContentLoaded avec CDN
       window.addEventListener("DOMContentLoaded", async () => {
-        console.log("🌐 DOM chargé, initialisation du client Supabase...");
+        console.log("🌐 DOM chargé, initialisation...");
         
         // Attendre que le CDN Supabase soit chargé
         let attempts = 0;
         while (!window.supabase && attempts < 50) {
-          if (window.supabase || typeof supabase !== 'undefined') {
-            break;
-          }
           await new Promise(resolve => setTimeout(resolve, 100));
           attempts++;
         }
         
-        // Initialise Supabase globalement
-        if (!window.supabase) {
+        // Initialiser le client Supabase
+        if (window.supabase && window.supabase.createClient) {
           try {
-            if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
-              throw new Error("Variables Supabase non définies");
-            }
-            
-            // Utiliser la version globale du CDN
-            const { createClient } = window.supabase || supabase;
-            window.supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-            console.log("✅ Supabase client initialisé globalement via CDN");
-          } catch (supabaseError) {
-            console.error("❌ Erreur d'initialisation Supabase:", supabaseError);
-            window.supabase = null; // Marquer comme failed
-          }
-        }
-
-      // ✅ Initialisation principale robuste
-      window.addEventListener("DOMContentLoaded", async () => {
-        console.log("🌐 DOM chargé, initialisation...");
-        
-        // Initialiser Supabase avec la fonction chargée
-        if (createClient && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-          try {
-            window.supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-            console.log("✅ Client Supabase initialisé");
+            window.supabase = window.supabase.createClient(
+              window.SUPABASE_URL, 
+              window.SUPABASE_ANON_KEY
+            );
+            console.log("✅ Client Supabase initialisé via CDN");
           } catch (error) {
-            console.error("❌ Erreur création client Supabase:", error);
+            console.error("❌ Erreur création client:", error);
             window.supabase = null;
           }
         } else {
-          console.warn("⚠️ Supabase non disponible - mode dégradé");
+          console.error("❌ CDN Supabase non chargé");
           window.supabase = null;
         }
 
