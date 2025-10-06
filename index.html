@@ -435,6 +435,105 @@
         background: #218838;
       }
       
+      /* Bulles de collaborateurs */
+      .collaborators-bubbles {
+        position: absolute;
+        pointer-events: none;
+        z-index: 1000;
+      }
+      
+      .collaborator-bubble {
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        background: white;
+        border-radius: 50%;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        border: 3px solid #007bff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        pointer-events: all;
+        animation: bubbleAppear 0.4s ease-out;
+        transition: all 0.3s ease;
+      }
+      
+      .collaborator-bubble:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        border-color: #28a745;
+      }
+      
+      .collaborator-bubble img {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-bottom: 2px;
+      }
+      
+      .collaborator-bubble .name {
+        font-size: 8px;
+        font-weight: bold;
+        text-align: center;
+        line-height: 1;
+        color: #333;
+        max-width: 70px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .collaborator-bubble.secretary {
+        border-color: #17a2b8;
+        width: 70px;
+        height: 70px;
+      }
+      
+      .collaborator-bubble.secretary img {
+        width: 40px;
+        height: 40px;
+      }
+      
+      @keyframes bubbleAppear {
+        0% {
+          opacity: 0;
+          transform: scale(0.3);
+        }
+        70% {
+          transform: scale(1.1);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      
+      .collaborators-close-btn {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        width: 30px;
+        height: 30px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        z-index: 1001;
+        pointer-events: all;
+        animation: bubbleAppear 0.4s ease-out 0.2s both;
+      }
+      
+      .collaborators-close-btn:hover {
+        background: #c82333;
+        transform: scale(1.1);
+      }
+      
       body.sidebar-open {
         margin-left: 300px;
       }
@@ -486,6 +585,30 @@
         
         .auth-discrete input {
           width: 120px;
+        }
+        
+        .collaborator-bubble {
+          width: 60px;
+          height: 60px;
+        }
+        
+        .collaborator-bubble img {
+          width: 35px;
+          height: 35px;
+        }
+        
+        .collaborator-bubble .name {
+          font-size: 7px;
+        }
+        
+        .collaborator-bubble.secretary {
+          width: 50px;
+          height: 50px;
+        }
+        
+        .collaborator-bubble.secretary img {
+          width: 30px;
+          height: 30px;
         }
       }
       
@@ -2453,6 +2576,114 @@
         document.getElementById('discrete-status').textContent = '';
       }
 
+      // Système de bulles de collaborateurs
+      let currentCollaboratorsBubbles = null;
+
+      function showCollaborators(ministerId, ministerElement) {
+        // Fermer les bulles existantes
+        hideCollaborators();
+        
+        // Trouver les collaborateurs de ce ministre
+        const collaborators = window.hierarchicalTree?.treeData?.find(person => person.id === ministerId)?.children || [];
+        
+        if (collaborators.length === 0) {
+          console.log('Aucun collaborateur trouvé pour ce ministre');
+          return;
+        }
+        
+        // Créer le conteneur des bulles
+        const bubblesContainer = document.createElement('div');
+        bubblesContainer.className = 'collaborators-bubbles';
+        bubblesContainer.id = 'collaborators-bubbles';
+        
+        // Obtenir la position du ministre
+        const rect = ministerElement.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+        
+        bubblesContainer.style.left = (rect.left + scrollLeft) + 'px';
+        bubblesContainer.style.top = (rect.top + scrollTop) + 'px';
+        
+        // Ajouter le bouton de fermeture
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'collaborators-close-btn';
+        closeBtn.innerHTML = '×';
+        closeBtn.onclick = hideCollaborators;
+        bubblesContainer.appendChild(closeBtn);
+        
+        // Créer les bulles pour chaque collaborateur
+        collaborators.forEach((collaborator, index) => {
+          createCollaboratorBubble(collaborator, index, collaborators.length, bubblesContainer);
+        });
+        
+        // Ajouter au DOM
+        document.body.appendChild(bubblesContainer);
+        currentCollaboratorsBubbles = bubblesContainer;
+        
+        // Fermer automatiquement après 10 secondes
+        setTimeout(() => {
+          if (currentCollaboratorsBubbles === bubblesContainer) {
+            hideCollaborators();
+          }
+        }, 10000);
+      }
+      
+      function createCollaboratorBubble(collaborator, index, total, container) {
+        const bubble = document.createElement('div');
+        bubble.className = `collaborator-bubble ${collaborator.role}`;
+        
+        // Calculer la position en cercle autour du ministre
+        const radius = 120;
+        const angle = (2 * Math.PI * index) / total - Math.PI / 2; // Commencer en haut
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        
+        bubble.style.left = x + 'px';
+        bubble.style.top = y + 'px';
+        bubble.style.animationDelay = (index * 0.1) + 's';
+        
+        // Image du collaborateur
+        const img = document.createElement('img');
+        img.src = collaborator.photo_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
+        img.alt = collaborator.full_name;
+        img.onerror = () => {
+          img.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
+        };
+        
+        // Nom du collaborateur
+        const name = document.createElement('div');
+        name.className = 'name';
+        name.textContent = collaborator.full_name.split(' ').slice(-1)[0]; // Nom de famille seulement
+        
+        bubble.appendChild(img);
+        bubble.appendChild(name);
+        
+        // Clic sur la bulle pour ouvrir la modal
+        bubble.onclick = (e) => {
+          e.stopPropagation();
+          openMinisterModal(collaborator);
+          hideCollaborators();
+        };
+        
+        container.appendChild(bubble);
+      }
+      
+      function hideCollaborators() {
+        if (currentCollaboratorsBubbles) {
+          currentCollaboratorsBubbles.remove();
+          currentCollaboratorsBubbles = null;
+        }
+      }
+      
+      // Fermer les bulles si on clique ailleurs
+      function handleDocumentClick(e) {
+        if (currentCollaboratorsBubbles && 
+            !currentCollaboratorsBubbles.contains(e.target) &&
+            !e.target.closest('.political-card')) {
+          hideCollaborators();
+        }
+      }
+
       // Initialisation au chargement de la page
       document.addEventListener('DOMContentLoaded', () => {
         initSidebar();
@@ -2537,6 +2768,16 @@
             }
           });
         }
+        
+        // Event listener pour fermer les bulles de collaborateurs
+        document.addEventListener('click', handleDocumentClick);
+        
+        // Fermer les bulles avec Échap
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && currentCollaboratorsBubbles) {
+            hideCollaborators();
+          }
+        });
       });
     </script>
 
