@@ -3765,7 +3765,8 @@
               fonction: this.traduireRole(person.role) || 'Fonction non définie',
               parti: person.party || 'Non défini',
               photo: person.photo_url || this.getDefaultPhoto(),
-              description: person.description || null
+              description: person.description || null,
+              superiorId: person.superior_id || null // Ajouter la relation hiérarchique
             };
 
             // Classer selon le rôle
@@ -4070,7 +4071,8 @@
           return `
             <div class="political-card ${personnalite.type} ${partyClass}" 
                  data-id="${personnalite.id}" 
-                 onclick="treeInstance.selectPolitician('${personnalite.id}')">
+                 onclick="treeInstance.selectPolitician('${personnalite.id}')"
+                 ondblclick="event.stopPropagation(); hideCollaborators(); treeInstance.openMinisterModal(treeInstance.findPolitician(treeInstance.treeData, '${personnalite.id}'))">
               <img class="political-photo" 
                    src="${personnalite.photo}" 
                    alt="${personnalite.prenom} ${personnalite.nom}"
@@ -4158,8 +4160,68 @@
           const politician = this.findPolitician(this.treeData, politicianId);
           if (politician) {
             console.log('Personnalité sélectionnée:', politician);
+            
+            // Trouver l'élément DOM de la carte cliquée
+            const cardElement = document.querySelector(`[data-id="${politicianId}"]`);
+            
+            // Si c'est un leader ou ministre avec des collaborateurs potentiels, essayer de montrer les bulles
+            if ((politician.type === 'premier-ministre' || politician.type === 'ministre' || politician.type === 'ministre-etat') && cardElement) {
+              
+              // Chercher les collaborateurs (personnes qui ont cette personne comme supérieur)
+              const collaborators = this.findCollaborators(politicianId);
+              
+              console.log(`Collaborateurs trouvés pour ${politician.prenom} ${politician.nom}:`, collaborators);
+              
+              if (collaborators.length > 0) {
+                // Convertir vers le format attendu par showCollaborators
+                const collaboratorsWithChildren = collaborators.map(collab => ({
+                  id: collab.id,
+                  full_name: `${collab.prenom} ${collab.nom}`,
+                  role: collab.type,
+                  photo_url: collab.photo,
+                  description: collab.description
+                }));
+                
+                // Créer un objet temporaire avec les collaborateurs
+                const tempPolitician = {
+                  id: politicianId,
+                  children: collaboratorsWithChildren
+                };
+                
+                // Mettre à jour temporairement window.hierarchicalTree
+                if (!window.hierarchicalTree) {
+                  window.hierarchicalTree = { treeData: [] };
+                }
+                window.hierarchicalTree.treeData = [tempPolitician];
+                
+                // Afficher les bulles
+                showCollaborators(politicianId, cardElement);
+                return; // Ne pas ouvrir la modal directement
+              }
+            }
+            
+            // Si pas de collaborateurs ou autre type, ouvrir directement la modal
             this.openMinisterModal(politician);
           }
+        }
+        
+        // Nouvelle fonction pour trouver les collaborateurs d'une personne
+        findCollaborators(superiorId) {
+          const allPoliticians = [];
+          
+          // Parcourir toutes les catégories pour trouver les collaborateurs
+          if (this.treeData.ministresEtat) {
+            allPoliticians.push(...this.treeData.ministresEtat);
+          }
+          if (this.treeData.ministres) {
+            allPoliticians.push(...this.treeData.ministres);
+          }
+          if (this.treeData.secretairesEtat) {
+            allPoliticians.push(...this.treeData.secretairesEtat);
+          }
+          
+          // Filtrer ceux qui ont cette personne comme supérieur
+          return allPoliticians.filter(politician => politician.superiorId === superiorId);
         }
         
         openMinisterModal(politician) {
