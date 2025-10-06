@@ -2261,9 +2261,13 @@
         </div>
       </div>
 
-      <!-- Section des personnes (existante) -->
+      <!-- Section des personnes (existante avec éléments de débogage) -->
       <div style="margin-top: 40px;">
         <h2>👥 Liste des Personnes</h2>
+        
+        <!-- ✅ Élément error manquant ajouté -->
+        <div id="error" style="color: #dc3545; background: #f8d7da; padding: 10px; border-radius: 5px; margin-bottom: 10px; display: none;"></div>
+        
         <ul id="list">Chargement…</ul>
         </div>
 
@@ -2365,7 +2369,17 @@
       async function loadPersons() {
         const ul = document.getElementById("list");
         const errBox = document.getElementById("error");
-        errBox.textContent = "";
+        
+        // ✅ Protection contre les éléments manquants
+        if (!ul) {
+          console.warn('Élément #list non trouvé dans le DOM');
+          return;
+        }
+        
+        if (errBox) {
+          errBox.textContent = "";
+          errBox.style.display = "none";
+        }
 
         try {
           // Utilisation du client Supabase global
@@ -2374,20 +2388,32 @@
             .select('*');
 
           if (error) {
-            errBox.textContent = `Erreur Supabase: ${error.message}`;
-            ul.textContent = "—";
+            if (errBox) {
+              errBox.textContent = `Erreur Supabase: ${error.message}`;
+              errBox.style.display = "block";
+            }
+            ul.textContent = "Erreur de chargement";
             return;
           }
+          
           ul.innerHTML = "";
-          data.forEach(p => {
-            const li = document.createElement("li");
-            li.textContent = p.full_name;
-            ul.appendChild(li);
-          });
-          if (data.length === 0) ul.textContent = "Aucune personne";
+          if (data && data.length > 0) {
+            data.forEach(p => {
+              const li = document.createElement("li");
+              li.textContent = p.full_name;
+              ul.appendChild(li);
+            });
+          } else {
+            ul.textContent = "Aucune personne trouvée";
+          }
         } catch (e) {
-          document.getElementById("error").textContent = String(e);
-          ul.textContent = "—";
+          console.error('Erreur dans loadPersons():', e);
+          const errorBox = document.getElementById("error");
+          if (errorBox) {
+            errorBox.textContent = `Erreur: ${String(e)}`;
+            errorBox.style.display = "block";
+          }
+          ul.textContent = "Erreur de chargement";
         }
       }
 
@@ -3098,17 +3124,29 @@
           const countElement = document.getElementById('persons-count');
           const emptyElement = document.getElementById('persons-empty');
           
-          // Mettre à jour le compteur
-          countElement.textContent = this.persons.length;
+          // ✅ Protection contre les éléments manquants
+          if (!container) {
+            console.warn('Élément #persons-list non trouvé dans le DOM');
+            return;
+          }
+          
+          // Mettre à jour le compteur (avec protection)
+          if (countElement) {
+            countElement.textContent = this.persons.length;
+          }
           
           if (this.persons.length === 0) {
             container.style.display = 'none';
-            emptyElement.style.display = 'block';
+            if (emptyElement) {
+              emptyElement.style.display = 'block';
+            }
             return;
           }
 
           container.style.display = 'block';
-          emptyElement.style.display = 'none';
+          if (emptyElement) {
+            emptyElement.style.display = 'none';
+          }
 
           const html = this.persons.map(person => {
             const superior = this.persons.find(p => p.id === person.superior_id);
