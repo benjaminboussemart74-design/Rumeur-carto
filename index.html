@@ -2088,22 +2088,16 @@
         errBox.textContent = "";
 
         try {
-    const url = `${window.SUPABASE_URL}/rest/v1/persons?select=*`;
-          const res = await fetch(url, {
-            headers: {
-              apikey: SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            },
-          });
+          // Utilisation du client Supabase global
+          const { data, error } = await window.supabase
+            .from('persons')
+            .select('*');
 
-          if (!res.ok) {
-            const text = await res.text();
-            errBox.textContent = `Erreur ${res.status} ${res.statusText}\n${text}`;
+          if (error) {
+            errBox.textContent = `Erreur Supabase: ${error.message}`;
             ul.textContent = "—";
             return;
           }
-
-          const data = await res.json();
           ul.innerHTML = "";
           data.forEach(p => {
             const li = document.createElement("li");
@@ -2132,21 +2126,14 @@
         }
 
         try {
-    const url = `${window.SUPABASE_URL}/rest/v1/persons`;
-          const body = JSON.stringify({ full_name: fullName, photo_url: photoUrl });
-          const res = await fetch(url, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              apikey: SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-              Prefer: "return=representation"
-            },
-            body
-          });
-          if (!res.ok) {
-            const text = await res.text();
-            formError.textContent = `Erreur ${res.status} ${res.statusText}\n${text}`;
+          // Utilisation du client Supabase pour l'insertion
+          const { data, error } = await window.supabase
+            .from('persons')
+            .insert([{ full_name: fullName, photo_url: photoUrl }])
+            .select();
+            
+          if (error) {
+            formError.textContent = `Erreur Supabase: ${error.message}`;
             return;
           }
           // Réinitialise le formulaire et recharge la liste
@@ -2157,12 +2144,15 @@
         }
       });
     </script>
+    
+    <!-- Init Supabase AVANT les autres scripts -->
     <script type="module">
       import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-  const supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+      // Client global Supabase accessible partout
+      window.supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
-      // Client Supabase initialisé - Authentification gérée par AdminManager
+      console.log('Client Supabase initialisé globalement');
     </script>
 
     <!-- Script pour la sidebar et les menus déroulants -->
@@ -2375,7 +2365,7 @@
           if (!window.supabase) return;
           
           try {
-            const { error } = await supabase.auth.signOut();
+            const { error } = await window.supabase.auth.signOut();
             if (error) throw error;
             
             // Recharger la page pour remettre à zéro l'état
@@ -2387,7 +2377,7 @@
         
         // Écouter les changements d'authentification
         if (window.supabase) {
-          supabase.auth.onAuthStateChange((event, session) => {
+          window.supabase.auth.onAuthStateChange((event, session) => {
             console.log('Changement d\'état d\'authentification:', event, session);
             if (event === 'SIGNED_IN') {
               // Recharger les permissions après connexion
@@ -2453,7 +2443,7 @@
               return;
             }
 
-            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            const { data: { user }, error: authError } = await window.supabase.auth.getUser();
             
             if (authError) {
               console.log('Pas d\'utilisateur connecté:', authError.message);
@@ -2471,7 +2461,7 @@
               
               try {
                 // Récupérer le rôle de l'utilisateur
-                const { data: roleData, error: roleError } = await supabase
+                const { data: roleData, error: roleError } = await window.supabase
                   .from('user_roles')
                   .select('role')
                   .eq('user_id', user.id)
@@ -2564,7 +2554,7 @@
           });
 
           // Écouter les changements d'authentification
-          supabase.auth.onAuthStateChange(async (event, session) => {
+          window.supabase.auth.onAuthStateChange(async (event, session) => {
             await this.checkUserPermissions();
             if (this.canEdit()) {
               await this.loadPersonsForAdmin();
@@ -2718,7 +2708,7 @@
           }
 
           try {
-            const { data, error } = await supabase
+            const { data, error } = await window.supabase
               .from('persons')
               .insert([formData])
               .select();
@@ -2782,7 +2772,7 @@
           }
 
           try {
-            const { error } = await supabase
+            const { error } = await window.supabase
               .from('persons')
               .update(formData)
               .eq('id', this.editingPersonId);
@@ -2831,7 +2821,7 @@
           }
 
           try {
-            const { error } = await supabase
+            const { error } = await window.supabase
               .from('persons')
               .delete()
               .eq('id', personId);
@@ -2975,19 +2965,17 @@
           console.log('Supabase URL:', window.SUPABASE_URL);
           console.log('Has Supabase Key:', !!window.SUPABASE_ANON_KEY);
           
-          // Test de connexion à Supabase
-          fetch(`${window.SUPABASE_URL}/rest/v1/persons?select=*&limit=1`, {
-            headers: {
-              apikey: window.SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${window.SUPABASE_ANON_KEY}`,
-            },
-          })
-          .then(response => {
-            console.log('Test connexion Supabase:', response.status, response.statusText);
-            return response.json();
-          })
-          .then(data => {
-            console.log('Test données Supabase:', data);
+          // Test de connexion à Supabase avec le client unifié
+          window.supabase
+            .from('persons')
+            .select('*')
+            .limit(1)
+            .then(({ data, error }) => {
+              if (error) {
+                console.error('Test connexion Supabase - Erreur:', error);
+              } else {
+                console.log('Test connexion Supabase - Succès:', data);
+              }
           })
           .catch(error => {
             console.error('Erreur test Supabase:', error);
@@ -3085,7 +3073,7 @@
 
         async testSupabaseConnection() {
           try {
-            const { data, error } = await supabase.from('persons').select('id').limit(1);
+            const { data, error } = await window.supabase.from('persons').select('id').limit(1);
             return !error;
           } catch (error) {
             return false;
@@ -3108,7 +3096,7 @@
             
             // Test 2: Table persons existe
             try {
-              const { error } = await supabase.from('persons').select('id').limit(1);
+              const { error } = await window.supabase.from('persons').select('id').limit(1);
               if (error) {
                 tests.push('❌ Table "persons" non trouvée');
               } else {
@@ -3120,7 +3108,7 @@
             
             // Test 3: Utilisateur connecté
             try {
-              const { data: { user } } = await supabase.auth.getUser();
+              const { data: { user } } = await window.supabase.auth.getUser();
               if (user) {
                 tests.push(`✅ Utilisateur connecté: ${user.email}`);
                 
@@ -3234,16 +3222,12 @@
 
         async loadData() {
           try {
-            // Charger les personnes depuis Supabase
-            const personsResponse = await fetch(`${window.SUPABASE_URL}/rest/v1/persons?select=*`, {
-              headers: {
-                apikey: window.SUPABASE_ANON_KEY,
-                Authorization: `Bearer ${window.SUPABASE_ANON_KEY}`,
-              },
-            });
+            // Charger les personnes depuis Supabase avec le client unifié
+            const { data: persons, error } = await window.supabase
+              .from('persons')
+              .select('*');
 
-            if (personsResponse.ok) {
-              const persons = await personsResponse.json();
+            if (!error && persons) {
               console.log('Personnes chargées depuis Supabase:', persons);
               
               // Créer la structure hiérarchique avec les vraies données
