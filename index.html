@@ -2467,36 +2467,50 @@
     </script>
     
     <!-- Init Supabase - Version compatible Vercel -->
-    <!-- Script Supabase CDN stable -->
+    <!-- Script Supabase CORRIGÉ -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-
-      window.addEventListener("DOMContentLoaded", async () => {
-        console.log("🌐 DOM chargé, initialisation...");
-        
-        // Attendre que le CDN Supabase soit chargé
-        let attempts = 0;
-        while (!window.supabase && attempts < 50) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          attempts++;
-        }
-        
-        // Initialiser le client Supabase
-        if (window.supabase && window.supabase.createClient) {
+      let supabaseReady = false;
+      
+      // Attendre que le CDN soit chargé
+      function initSupabase() {
+        if (window.supabase && window.supabase.createClient && !supabaseReady) {
           try {
-            window.supabase = window.supabase.createClient(
+            // Créer le client Supabase
+            const supabaseClient = window.supabase.createClient(
               window.SUPABASE_URL, 
               window.SUPABASE_ANON_KEY
             );
-            console.log("✅ Client Supabase initialisé via CDN");
+            
+            // Remplacer la lib par le client
+            window.supabase = supabaseClient;
+            supabaseReady = true;
+            
+            console.log("✅ Client Supabase initialisé correctement");
+            
+            // Déclencher l'initialisation de l'app
+            if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', initializeApp);
+            } else {
+              initializeApp();
+            }
+            
           } catch (error) {
-            console.error("❌ Erreur création client:", error);
-            window.supabase = null;
+            console.error("❌ Erreur initialisation Supabase:", error);
           }
-        } else {
-          console.error("❌ CDN Supabase non chargé");
-          window.supabase = null;
+        } else if (!window.supabase) {
+          // Réessayer après 100ms
+          setTimeout(initSupabase, 100);
         }
+      }
+      
+      // Démarrer l'init
+      initSupabase();
+      
+      async function initializeApp() {
+        console.log("🚀 Initialisation de l'application...");
+        
+        try {
 
         // Test : vérifier la connexion si Supabase disponible
         if (window.supabase) {
@@ -2648,7 +2662,13 @@
         if (typeof handleDocumentClick === 'function') {
           document.addEventListener('click', handleDocumentClick);
         }
-      });
+        
+        console.log("✅ Application initialisée avec succès");
+        
+        } catch (error) {
+          console.error("❌ Erreur d'initialisation complète:", error);
+        }
+      }
     </script>
 
     <!-- Script pour la sidebar et les menus déroulants -->
@@ -3258,7 +3278,7 @@
           }
 
           try {
-            const { data, error } = await supabase
+            const { data, error } = await window.supabase
               .from('persons')
               .select('*')
               .order('full_name');
@@ -3620,7 +3640,7 @@
 
         async exportData() {
           try {
-            const { data, error } = await supabase
+            const { data, error } = await window.supabase
               .from('persons')
               .select('*')
               .order('full_name');
@@ -3813,7 +3833,7 @@
                 
                 // Test 4: Rôle utilisateur
                 try {
-                  const { data: roleData } = await supabase
+                  const { data: roleData } = await window.supabase
                     .from('user_roles')
                     .select('role')
                     .eq('user_id', user.id)
@@ -4480,7 +4500,7 @@
           if (!window.supabase) return null;
           
           try {
-            const { data, error } = await supabase
+            const { data, error } = await window.supabase
               .from('persons')
               .select('*')
               .eq('id', politicianId)
