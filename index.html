@@ -534,6 +534,97 @@
         transform: scale(1.1);
       }
       
+      /* Section des personnes améliorée */
+      #persons-section {
+        margin-top: 20px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #e9ecef;
+      }
+      
+      #persons-list {
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        padding: 0;
+        margin: 0;
+      }
+      
+      #persons-list li {
+        padding: 12px 15px;
+        border-bottom: 1px solid #f1f3f4;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.2s ease;
+      }
+      
+      #persons-list li:last-child {
+        border-bottom: none;
+      }
+      
+      #persons-list li:hover {
+        background: #f8f9fa;
+        transform: translateX(3px);
+      }
+      
+      #persons-list .person-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #dee2e6;
+      }
+      
+      #persons-list .person-info {
+        flex: 1;
+      }
+      
+      #persons-list .person-name {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 2px;
+      }
+      
+      #persons-list .person-role {
+        font-size: 12px;
+        color: #6c757d;
+        text-transform: capitalize;
+      }
+      
+      #persons-list .person-actions {
+        display: flex;
+        gap: 8px;
+      }
+      
+      #persons-list .btn-mini {
+        padding: 4px 8px;
+        font-size: 11px;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      
+      #persons-list .btn-edit {
+        background: #ffc107;
+        color: #212529;
+      }
+      
+      #persons-list .btn-edit:hover {
+        background: #ffb700;
+      }
+      
+      #persons-list .btn-delete {
+        background: #dc3545;
+        color: white;
+      }
+      
+      #persons-list .btn-delete:hover {
+        background: #c82333;
+      }
+      
       body.sidebar-open {
         margin-left: 300px;
       }
@@ -2071,11 +2162,18 @@
             </form>
           </div>
           
-          <div class="persons-list" id="persons-list">
-            <div style="padding: 20px; text-align: center; color: #7f8c8d;">
-              Chargement de la liste des personnes...
-            </div>
-          </div>
+          <!-- Section Liste des Personnes avec compteur -->
+          <section id="persons-section">
+            <h3 style="margin: 20px 0 15px 0; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+              👥 Liste des Personnes
+              <span id="persons-count" style="background: #3498db; color: white; padding: 4px 12px; border-radius: 15px; font-size: 14px; font-weight: bold;">0</span>
+            </h3>
+
+            <ul id="persons-list" style="list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto;"></ul>
+            <p id="persons-empty" style="display: none; padding: 40px 20px; text-align: center; color: #7f8c8d; font-style: italic; background: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6;">
+              📝 Aucune personne pour le moment. Utilisez l'onglet "Ajouter" pour créer votre première entrée.
+            </p>
+          </section>
         </div>
 
         <!-- Onglet Paramètres -->
@@ -2997,23 +3095,27 @@
 
         renderPersonsList() {
           const container = document.getElementById('persons-list');
+          const countElement = document.getElementById('persons-count');
+          const emptyElement = document.getElementById('persons-empty');
+          
+          // Mettre à jour le compteur
+          countElement.textContent = this.persons.length;
           
           if (this.persons.length === 0) {
-            container.innerHTML = `
-              <div style="padding: 40px; text-align: center; color: #7f8c8d;">
-                <div style="font-size: 48px; margin-bottom: 16px;">👥</div>
-                <div>Aucune personne trouvée</div>
-              </div>
-            `;
+            container.style.display = 'none';
+            emptyElement.style.display = 'block';
             return;
           }
+
+          container.style.display = 'block';
+          emptyElement.style.display = 'none';
 
           const html = this.persons.map(person => {
             const superior = this.persons.find(p => p.id === person.superior_id);
             const photoUrl = person.photo_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face';
             
             return `
-              <div class="person-item">
+              <li class="person-item">
                 <img class="person-avatar" src="${photoUrl}" alt="${person.full_name}" 
                      onerror="this.src='https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face'">
                 <div class="person-info">
@@ -3023,22 +3125,22 @@
                     ${superior ? ` • Sous ${superior.full_name}` : ''}
                   </div>
                   ${person.description ? `
-                    <div class="person-description">
-                      ${person.description.length > 100 ? person.description.substring(0, 100) + '...' : person.description}
+                    <div class="person-description" style="font-size: 11px; color: #6c757d; margin-top: 4px; line-height: 1.3;">
+                      ${person.description.length > 80 ? person.description.substring(0, 80) + '...' : person.description}
                     </div>
                   ` : ''}
                 </div>
                 <div class="person-actions">
-                  <button class="btn-icon btn-edit" onclick="adminManager.editPerson('${person.id}')" title="Modifier">
-                    ✏️
+                  <button class="btn-mini btn-edit" onclick="adminManager.editPerson('${person.id}')" title="Modifier">
+                    ✏️ Éditer
                   </button>
                   ${this.canDelete() ? `
-                    <button class="btn-icon btn-delete" onclick="adminManager.deletePerson('${person.id}')" title="Supprimer">
-                      🗑️
+                    <button class="btn-mini btn-delete" onclick="adminManager.deletePerson('${person.id}')" title="Supprimer">
+                      🗑️ Suppr.
                     </button>
                   ` : ''}
                 </div>
-              </div>
+              </li>
             `;
           }).join('');
 
