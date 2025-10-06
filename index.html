@@ -2381,6 +2381,13 @@
           errBox.style.display = "none";
         }
 
+        // ✅ Vérifier que Supabase est disponible
+        if (!window.supabase) {
+          console.warn('Supabase non encore initialisé dans loadPersons()');
+          ul.textContent = "Connexion à la base de données...";
+          return;
+        }
+
         try {
           // Utilisation du client Supabase global
           const { data, error } = await window.supabase
@@ -2902,6 +2909,25 @@
             hideCollaborators();
           }
         });
+        
+        // ✅ Attendre que Supabase soit prêt avant de charger les personnes
+        let retryCount = 0;
+        const waitForSupabase = () => {
+          if (window.supabase) {
+            console.log('Supabase prêt, chargement des personnes...');
+            loadPersons();
+          } else if (retryCount < 10) {
+            retryCount++;
+            console.log(`Attente de Supabase... (${retryCount}/10)`);
+            setTimeout(waitForSupabase, 500);
+          } else {
+            console.error('Timeout: Supabase non disponible après 5 secondes');
+            const ul = document.getElementById("list");
+            if (ul) ul.textContent = "Erreur de connexion à la base de données";
+          }
+        };
+        
+        waitForSupabase();
       });
     </script>
 
