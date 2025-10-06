@@ -439,7 +439,7 @@
       .collaborators-bubbles {
         position: absolute;
         pointer-events: none;
-        z-index: 1000;
+        z-index: 1500; /* Au-dessus des éléments normaux mais en dessous de la modal par défaut */
       }
       
       .collaborator-bubble {
@@ -448,22 +448,24 @@
         height: 80px;
         background: white;
         border-radius: 50%;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        border: 3px solid #007bff;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        border: 4px solid #007bff;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         cursor: pointer;
         pointer-events: all;
-        animation: bubbleAppear 0.4s ease-out;
+        animation: bubbleAppear 0.6s ease-out;
         transition: all 0.3s ease;
+        backdrop-filter: blur(2px);
       }
       
       .collaborator-bubble:hover {
-        transform: scale(1.1);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        transform: scale(1.15);
+        box-shadow: 0 12px 35px rgba(0,0,0,0.4);
         border-color: #28a745;
+        border-width: 5px;
       }
       
       .collaborator-bubble img {
@@ -2381,12 +2383,14 @@
           errBox.style.display = "none";
         }
 
-        // ✅ Vérifier que Supabase est disponible
+        // ✅ Vérification robuste de Supabase
         if (!window.supabase) {
-          console.warn('Supabase non encore initialisé dans loadPersons()');
+          console.warn('⚠️ Supabase non encore initialisé dans loadPersons()');
           ul.textContent = "Connexion à la base de données...";
           return;
         }
+        
+        console.log('✅ Supabase prêt, chargement des personnes...');
 
         try {
           // Utilisation du client Supabase global
@@ -2402,6 +2406,10 @@
             ul.textContent = "Erreur de chargement";
             return;
           }
+          
+          // ✅ Mettre à jour le cache global des personnes
+          window.personsCache = data || [];
+          console.log('Cache des personnes mis à jour:', window.personsCache.length, 'personnes');
           
           ul.innerHTML = "";
           if (data && data.length > 0) {
@@ -2424,7 +2432,7 @@
         }
       }
 
-      loadPersons();
+      // ✅ SUPPRIMÉ: loadPersons() - maintenant appelé dans DOMContentLoaded après init Supabase
       // Gestion du formulaire d’ajout/modification
       document.getElementById("person-form").addEventListener("submit", async function(e) {
         e.preventDefault();
@@ -2458,14 +2466,229 @@
       });
     </script>
     
-    <!-- Init Supabase AVANT les autres scripts -->
+    <!-- Init Supabase - Version compatible Vercel -->
     <script type="module">
-      import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+      // Import avec fallback pour Vercel
+      let createClient;
+      try {
+        const supabaseModule = await import("https://esm.sh/@supabase/supabase-js@2");
+        createClient = supabaseModule.createClient;
+        console.log("✅ Module Supabase chargé via ESM");
+      } catch (importError) {
+        console.warn("⚠️ Fallback: import ESM échoué, tentative CDN...");
+        // Fallback vers CDN si ESM échoue
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+          script.onload = () => {
+            createClient = window.supabase?.createClient;
+            resolve();
+          };
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
 
-      // Client global Supabase accessible partout
-      window.supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+      // ✅ Solution propre : tout dans DOMContentLoaded avec CDN
+      window.addEventListener("DOMContentLoaded", async () => {
+        console.log("🌐 DOM chargé, initialisation du client Supabase...");
+        
+        // Attendre que le CDN Supabase soit chargé
+        let attempts = 0;
+        while (!window.supabase && attempts < 50) {
+          if (window.supabase || typeof supabase !== 'undefined') {
+            break;
+          }
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+        }
+        
+        // Initialise Supabase globalement
+        if (!window.supabase) {
+          try {
+            if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+              throw new Error("Variables Supabase non définies");
+            }
+            
+            // Utiliser la version globale du CDN
+            const { createClient } = window.supabase || supabase;
+            window.supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+            console.log("✅ Supabase client initialisé globalement via CDN");
+          } catch (supabaseError) {
+            console.error("❌ Erreur d'initialisation Supabase:", supabaseError);
+            window.supabase = null; // Marquer comme failed
+          }
+        }
 
-      console.log('Client Supabase initialisé globalement');
+      // ✅ Initialisation principale robuste
+      window.addEventListener("DOMContentLoaded", async () => {
+        console.log("🌐 DOM chargé, initialisation...");
+        
+        // Initialiser Supabase avec la fonction chargée
+        if (createClient && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+          try {
+            window.supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+            console.log("✅ Client Supabase initialisé");
+          } catch (error) {
+            console.error("❌ Erreur création client Supabase:", error);
+            window.supabase = null;
+          }
+        } else {
+          console.warn("⚠️ Supabase non disponible - mode dégradé");
+          window.supabase = null;
+        }
+
+        // Test : vérifier la connexion si Supabase disponible
+        if (window.supabase) {
+          try {
+            const { data: { user } } = await window.supabase.auth.getUser();
+            if (user) {
+              console.log("🔐 Utilisateur connecté :", user.email);
+            } else {
+              console.log("⚠️ Aucun utilisateur connecté");
+            }
+          } catch (error) {
+            console.log("⚠️ Erreur auth:", error.message);
+          }
+        } else {
+          console.log("⚠️ Mode dégradé : Supabase non disponible");
+        }
+
+        // Lancement du chargement des données avec timeout
+        if (window.supabase) {
+          console.log("✅ Supabase prêt, chargement des personnes...");
+          try {
+            if (typeof loadPersons === 'function') {
+              // Timeout de 10 secondes pour éviter de bloquer l'interface
+              const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout de chargement')), 10000)
+              );
+              
+              await Promise.race([loadPersons(), timeoutPromise]);
+              console.log("✅ Données chargées avec succès");
+            }
+          } catch (error) {
+            console.error("❌ Erreur lors du chargement des données:", error);
+            const ul = document.getElementById("list");
+            if (ul) ul.textContent = "Erreur de connexion à la base de données";
+          }
+        } else {
+          console.log("⚠️ Mode dégradé : chargement des données ignoré");
+          const ul = document.getElementById("list");
+          if (ul) ul.textContent = "Mode hors ligne - Supabase non disponible";
+        }
+
+        // ✅ Initialisation des composants UI TOUJOURS (même si données échouent)
+        console.log("🎨 Initialisation de l'interface utilisateur...");
+        try {
+          if (typeof initSidebar === 'function') {
+            initSidebar();
+            console.log("✅ Sidebar initialisée");
+          }
+          if (typeof initDropdowns === 'function') {
+            initDropdowns();
+            console.log("✅ Dropdowns initialisés");
+          }
+          if (typeof initHierarchicalTree === 'function') {
+            initHierarchicalTree();
+            console.log("✅ Arbre hiérarchique initialisé");
+          }
+          if (typeof initAdminInterface === 'function') {
+            initAdminInterface();
+            console.log("✅ Interface admin initialisée");
+          }
+        } catch (uiError) {
+          console.error("❌ Erreur d'initialisation UI:", uiError);
+        }
+        
+        // Navigation dans le menu
+        const dashboardBtn = document.getElementById('dashboard');
+        if (dashboardBtn) {
+          dashboardBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (typeof showHomePage === 'function') showHomePage();
+          });
+        }
+        
+        const voirPersonnesBtn = document.getElementById('voir-personnes');
+        if (voirPersonnesBtn) {
+          voirPersonnesBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (typeof showGovernmentTree === 'function') showGovernmentTree();
+          });
+        }
+        
+        const administrationBtn = document.getElementById('administration');
+        if (administrationBtn) {
+          administrationBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (typeof showAdminPanel === 'function') showAdminPanel();
+          });
+        }
+        
+        // Afficher la page d'accueil par défaut
+        if (typeof showHomePage === 'function') showHomePage();
+        
+        // Gestionnaire de déconnexion
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', async () => {
+            if (!window.supabase) return;
+            try {
+              const { error } = await window.supabase.auth.signOut();
+              if (error) throw error;
+              location.reload();
+            } catch (error) {
+              alert('Erreur lors de la déconnexion: ' + error.message);
+            }
+          });
+        }
+        
+        // Écouter les changements d'authentification
+        if (window.supabase) {
+          window.supabase.auth.onAuthStateChange((event, session) => {
+            console.log('Changement d\'état d\'authentification:', event, session);
+            if (event === 'SIGNED_IN') {
+              if (typeof adminManager !== 'undefined' && adminManager) adminManager.checkUserPermissions();
+            } else if (event === 'SIGNED_OUT') {
+              const adminPanel = document.getElementById('admin-panel');
+              if (adminPanel) adminPanel.classList.remove('visible');
+            }
+          });
+        }
+        
+        // Raccourcis clavier et événements
+        document.addEventListener('keydown', (e) => {
+          if (e.ctrlKey && e.shiftKey && e.key === 'L') {
+            e.preventDefault();
+            if (typeof discreteAuthMode !== 'undefined' && !discreteAuthMode) {
+              if (typeof showDiscreteAuth === 'function') showDiscreteAuth();
+            } else {
+              if (typeof hideDiscreteAuth === 'function') hideDiscreteAuth();
+            }
+          }
+          if (e.key === 'Escape') {
+            if (typeof discreteAuthMode !== 'undefined' && discreteAuthMode && typeof hideDiscreteAuth === 'function') hideDiscreteAuth();
+            if (typeof currentCollaboratorsBubbles !== 'undefined' && currentCollaboratorsBubbles) hideCollaborators();
+          }
+        });
+        
+        // Double-clic sur le logo pour afficher l'auth
+        const logoElement = document.querySelector('.logo');
+        if (logoElement) {
+          logoElement.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            if (typeof discreteAuthMode !== 'undefined' && !discreteAuthMode && typeof showDiscreteAuth === 'function') {
+              showDiscreteAuth();
+            }
+          });
+        }
+        
+        // Event listener pour fermer les bulles
+        if (typeof handleDocumentClick === 'function') {
+          document.addEventListener('click', handleDocumentClick);
+        }
+      });
     </script>
 
     <!-- Script pour la sidebar et les menus déroulants -->
@@ -2710,15 +2933,39 @@
       // Système de bulles de collaborateurs
       let currentCollaboratorsBubbles = null;
 
-      function showCollaborators(ministerId, ministerElement) {
+      async function showCollaborators(ministerId, ministerElement) {
         // Fermer les bulles existantes
         hideCollaborators();
         
-        // Trouver les collaborateurs de ce ministre
-        const collaborators = window.hierarchicalTree?.treeData?.find(person => person.id === ministerId)?.children || [];
+        // Trouver les collaborateurs de ce ministre depuis Supabase
+        let collaborators = [];
+        
+        if (window.personsCache && window.personsCache.length > 0) {
+          // Utiliser le cache Supabase s'il est disponible
+          collaborators = window.personsCache.filter(person => 
+            person.superior_id === ministerId && person.id !== ministerId
+          );
+        } else if (window.supabase) {
+          // Sinon interroger directement Supabase
+          try {
+            const { data, error } = await window.supabase
+              .from('persons')
+              .select('*')
+              .eq('superior_id', ministerId);
+              
+            if (error) throw error;
+            collaborators = data || [];
+          } catch (error) {
+            console.error('Erreur lors de la récupération des collaborateurs:', error);
+            return;
+          }
+        }
+        
+        console.log('🔍 Collaborateurs trouvés pour', ministerId, ':', collaborators.length);
+        console.log('📊 Données des collaborateurs:', collaborators);
         
         if (collaborators.length === 0) {
-          console.log('Aucun collaborateur trouvé pour ce ministre');
+          console.log('❌ Aucun collaborateur trouvé pour ce ministre');
           return;
         }
         
@@ -2727,13 +2974,33 @@
         bubblesContainer.className = 'collaborators-bubbles';
         bubblesContainer.id = 'collaborators-bubbles';
         
-        // Obtenir la position du ministre
-        const rect = ministerElement.getBoundingClientRect();
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+        // Vérifier si la modal est ouverte
+        const modal = document.getElementById('minister-modal');
+        const isModalOpen = modal && modal.classList.contains('active');
         
-        bubblesContainer.style.left = (rect.left + scrollLeft) + 'px';
-        bubblesContainer.style.top = (rect.top + scrollTop) + 'px';
+        if (isModalOpen) {
+          // Positionner autour de la modal
+          const modalContent = modal.querySelector('.minister-modal-content');
+          if (modalContent) {
+            const modalRect = modalContent.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+            
+            // Centrer sur la modal
+            bubblesContainer.style.left = (modalRect.left + scrollLeft + modalRect.width / 2) + 'px';
+            bubblesContainer.style.top = (modalRect.top + scrollTop + modalRect.height / 2) + 'px';
+            bubblesContainer.style.zIndex = '2200'; // Au-dessus de la modal
+          }
+        } else {
+          // Comportement original : autour de l'élément dans l'arbre
+          const rect = ministerElement.getBoundingClientRect();
+          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+          const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+          
+          bubblesContainer.style.left = (rect.left + scrollLeft) + 'px';
+          bubblesContainer.style.top = (rect.top + scrollTop) + 'px';
+          bubblesContainer.style.zIndex = '1500';
+        }
         
         // Ajouter le bouton de fermeture
         const closeBtn = document.createElement('button');
@@ -2763,8 +3030,12 @@
         const bubble = document.createElement('div');
         bubble.className = `collaborator-bubble ${collaborator.role}`;
         
-        // Calculer la position en cercle autour du ministre
-        const radius = 120;
+        // Vérifier si la modal est ouverte pour ajuster le rayon
+        const modal = document.getElementById('minister-modal');
+        const isModalOpen = modal && modal.classList.contains('active');
+        
+        // Calculer la position en cercle autour du ministre ou de la modal
+        const radius = isModalOpen ? 180 : 120; // Rayon plus grand si modal ouverte
         const angle = (2 * Math.PI * index) / total - Math.PI / 2; // Commencer en haut
         const x = Math.cos(angle) * radius;
         const y = Math.sin(angle) * radius;
@@ -2792,8 +3063,20 @@
         // Clic sur la bulle pour ouvrir la modal
         bubble.onclick = (e) => {
           e.stopPropagation();
-          openMinisterModal(collaborator);
+          // Convertir les données Supabase au format attendu par openMinisterModal
+          const politicianData = {
+            id: collaborator.id,
+            prenom: collaborator.full_name.split(' ')[0] || '',
+            nom: collaborator.full_name.split(' ').slice(1).join(' ') || '',
+            fonction: collaborator.role,
+            parti: collaborator.party,
+            photo: collaborator.photo_url,
+            type: 'ministre' // Type par défaut
+          };
           hideCollaborators();
+          if (window.hierarchicalTree) {
+            window.hierarchicalTree.openMinisterModal(politicianData);
+          }
         };
         
         container.appendChild(bubble);
@@ -2815,120 +3098,7 @@
         }
       }
 
-      // Initialisation au chargement de la page
-      document.addEventListener('DOMContentLoaded', () => {
-        initSidebar();
-        initDropdowns();
-        initHierarchicalTree();
-        initAdminInterface();
-        
-        // Navigation dans le menu
-        document.getElementById('dashboard').addEventListener('click', (e) => {
-          e.preventDefault();
-          showHomePage();
-        });
-        
-        document.getElementById('voir-personnes').addEventListener('click', (e) => {
-          e.preventDefault();
-          showGovernmentTree();
-        });
-        
-        document.getElementById('administration').addEventListener('click', (e) => {
-          e.preventDefault();
-          showAdminPanel();
-        });
-        
-        // Afficher la page d'accueil par défaut
-        showHomePage();
-        
-        // Gestionnaire de déconnexion pour contributeurs autorisés
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-          if (!window.supabase) return;
-          
-          try {
-            const { error } = await window.supabase.auth.signOut();
-            if (error) throw error;
-            
-            // Recharger la page pour remettre à zéro l'état
-            location.reload();
-          } catch (error) {
-            alert('Erreur lors de la déconnexion: ' + error.message);
-          }
-        });
-        
-        // Écouter les changements d'authentification
-        if (window.supabase) {
-          window.supabase.auth.onAuthStateChange((event, session) => {
-            console.log('Changement d\'état d\'authentification:', event, session);
-            if (event === 'SIGNED_IN') {
-              // Recharger les permissions après connexion
-              if (adminManager) {
-                adminManager.checkUserPermissions();
-              }
-            } else if (event === 'SIGNED_OUT') {
-              // Cacher l'interface admin après déconnexion
-              document.getElementById('admin-panel').classList.remove('visible');
-            }
-          });
-        }
-        
-        // Raccourci clavier discret pour afficher l'auth (Ctrl+Shift+L)
-        document.addEventListener('keydown', (e) => {
-          if (e.ctrlKey && e.shiftKey && e.key === 'L') {
-            e.preventDefault();
-            if (!discreteAuthMode) {
-              showDiscreteAuth();
-            } else {
-              hideDiscreteAuth();
-            }
-          }
-          
-          // Échap pour fermer
-          if (e.key === 'Escape' && discreteAuthMode) {
-            hideDiscreteAuth();
-          }
-        });
-
-        // Double-clic sur le logo pour afficher l'auth
-        const logoElement = document.querySelector('.logo');
-        if (logoElement) {
-          logoElement.addEventListener('dblclick', (e) => {
-            e.preventDefault();
-            if (!discreteAuthMode) {
-              showDiscreteAuth();
-            }
-          });
-        }
-        
-        // Event listener pour fermer les bulles de collaborateurs
-        document.addEventListener('click', handleDocumentClick);
-        
-        // Fermer les bulles avec Échap
-        document.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape' && currentCollaboratorsBubbles) {
-            hideCollaborators();
-          }
-        });
-        
-        // ✅ Attendre que Supabase soit prêt avant de charger les personnes
-        let retryCount = 0;
-        const waitForSupabase = () => {
-          if (window.supabase) {
-            console.log('Supabase prêt, chargement des personnes...');
-            loadPersons();
-          } else if (retryCount < 10) {
-            retryCount++;
-            console.log(`Attente de Supabase... (${retryCount}/10)`);
-            setTimeout(waitForSupabase, 500);
-          } else {
-            console.error('Timeout: Supabase non disponible après 5 secondes');
-            const ul = document.getElementById("list");
-            if (ul) ul.textContent = "Erreur de connexion à la base de données";
-          }
-        };
-        
-        waitForSupabase();
-      });
+      // ✅ Initialisation centralisée dans le script module DOMContentLoaded ci-dessus
     </script>
 
     <!-- Script pour l'interface d'administration -->
@@ -3280,6 +3450,9 @@
             await this.loadPersonsForAdmin();
             this.populateSuperiorSelects();
             
+            // ✅ Actualiser le cache des personnes pour les bulles de collaborateurs
+            await loadPersons();
+            
             // Actualiser l'arborescence
             if (window.treeInstance) {
               await window.treeInstance.refresh();
@@ -3344,6 +3517,9 @@
             await this.loadPersonsForAdmin();
             this.populateSuperiorSelects();
             
+            // ✅ Actualiser le cache des personnes pour les bulles de collaborateurs
+            await loadPersons();
+            
             // Actualiser l'arborescence
             if (window.treeInstance) {
               await window.treeInstance.refresh();
@@ -3391,6 +3567,9 @@
             this.showAlert('Personne supprimée avec succès !', 'success');
             await this.loadPersonsForAdmin();
             this.populateSuperiorSelects();
+            
+            // ✅ Actualiser le cache des personnes pour les bulles de collaborateurs
+            await loadPersons();
             
             // Actualiser l'arborescence
             if (window.treeInstance) {
@@ -4329,6 +4508,11 @@
             // Afficher le modal
             modal.classList.add('active');
             document.body.style.overflow = 'hidden'; // Empêcher le scroll
+            
+            // Afficher automatiquement les collaborateurs après un petit délai
+            setTimeout(async () => {
+              await showCollaborators(politician.id, null);
+            }, 500); // Attendre que la modal soit bien affichée
           });
         }
         
@@ -4555,6 +4739,7 @@
         const modal = document.getElementById('minister-modal');
         modal.classList.remove('active');
         document.body.style.overflow = ''; // Restaurer le scroll
+        hideCollaborators(); // Fermer aussi les bulles de collaborateurs
       }
       
       function editMinisterFromModal() {
