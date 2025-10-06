@@ -876,12 +876,102 @@
         width: 100%;
         flex-wrap: wrap;
       }
+
+      /* Lignes de connexion hiérarchique */
+      .level-0::after {
+        content: '';
+        position: absolute;
+        bottom: -25px;
+        left: 50%;
+        width: 2px;
+        height: 25px;
+        background: #ccc;
+        transform: translateX(-50%);
+        z-index: 1;
+      }
+
+      .level-1::before {
+        content: '';
+        position: absolute;
+        top: -25px;
+        left: 10%;
+        right: 10%;
+        height: 2px;
+        background: #ccc;
+        z-index: 1;
+      }
+
+      .level-1::after {
+        content: '';
+        position: absolute;
+        bottom: -25px;
+        left: 50%;
+        width: 2px;
+        height: 25px;
+        background: #ccc;
+        transform: translateX(-50%);
+        z-index: 1;
+      }
       
       .hierarchy-level.level-0 {
         margin-top: 20px;
         margin-bottom: 50px;
       }
       
+      /* Zone d'arbre zoomable */
+      .tree-viewport {
+        width: 100%;
+        height: 600px;
+        overflow: hidden;
+        position: relative;
+        background: white;
+        border-radius: 15px;
+        border: 2px solid #e1e5e9;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        margin: 20px;
+      }
+
+      .tree-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        transform-origin: 0 0;
+        transition: transform 0.1s ease;
+        padding: 50px;
+        min-width: 1200px;
+        min-height: 800px;
+      }
+
+      .zoom-controls {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 100;
+        display: flex;
+        gap: 5px;
+      }
+
+      .zoom-btn {
+        background: rgba(255,255,255,0.9);
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+      }
+
+      .zoom-info {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 12px;
+      }
+
       /* Carte de personnalité politique - Style minimaliste */
       .political-card {
         display: flex;
@@ -1497,31 +1587,128 @@
       
       /* Interface d'administration */
       .admin-panel {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 280px;
+        max-height: 80vh;
         background: white;
-        border-radius: 15px;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        margin: 20px 0;
-        padding: 30px;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 15px;
         display: none;
+        z-index: 10000;
+        overflow-y: auto;
+        font-size: 12px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+      }
+
+      .editor-toggle {
+        position: fixed;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 8px 0 0 8px;
+        padding: 15px 8px;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        cursor: pointer;
+        z-index: 9999;
+        font-size: 12px;
+        font-weight: 600;
+        box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+      }
+
+      .editor-toggle:hover {
+        background: #0056b3;
+        transform: translateY(-50%) translateX(-3px);
+      }
+
+      .graph-editor {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border: 1px solid #e9ecef;
+      }
+
+      .editor-section {
+        margin-bottom: 20px;
+      }
+
+      .editor-section h4 {
+        font-size: 14px;
+        color: #495057;
+        margin-bottom: 10px;
+        font-weight: 600;
+      }
+
+      .editor-input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 13px;
+        margin-bottom: 8px;
+      }
+
+      .editor-button {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-bottom: 8px;
+        font-size: 13px;
+      }
+
+      .btn-primary-editor {
+        background: #007bff;
+        color: white;
+      }
+
+      .btn-success-editor {
+        background: #28a745;
+        color: white;
+      }
+
+      .btn-danger-editor {
+        background: #dc3545;
+        color: white;
+      }
+
+      .btn-secondary-editor {
+        background: #6c757d;
+        color: white;
       }
       
       .admin-panel.visible {
         display: block;
-        animation: slideInUp 0.5s ease forwards;
+        animation: slideInRight 0.3s ease forwards;
+      }
+
+      @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
       }
       
       .admin-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 30px;
-        padding-bottom: 20px;
-        border-bottom: 2px solid #e1e5e9;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e1e5e9;
       }
       
       .admin-header h2 {
         color: #2c3e50;
-        font-size: 1.5em;
+        font-size: 1.2em;
         margin: 0;
         display: flex;
         align-items: center;
@@ -1573,14 +1760,15 @@
       }
       
       .form-group {
-        margin-bottom: 20px;
+        margin-bottom: 12px;
       }
       
       .form-group label {
         display: block;
-        margin-bottom: 8px;
+        margin-bottom: 4px;
         font-weight: 600;
         color: #2c3e50;
+        font-size: 12px;
       }
       
       .form-group input,
@@ -2029,15 +2217,77 @@
             <div class="spinner"></div>
             Chargement de l'arbre hiérarchique...
           </div>
-          <div class="tree" id="tree-view" style="display: none;"></div>
+          <div class="tree-viewport">
+            <div class="zoom-controls">
+              <button class="zoom-btn" onclick="treeCanvas.zoomIn()">+</button>
+              <button class="zoom-btn" onclick="treeCanvas.zoomOut()">−</button>
+              <button class="zoom-btn" onclick="treeCanvas.resetView()">⌂</button>
+              <button class="zoom-btn" onclick="treeCanvas.toggleFullscreen()" title="Plein écran">⛶</button>
+            </div>
+            <div class="zoom-info">
+              Zoom: <span id="zoom-level">100%</span> | Barre espace pour déplacer
+            </div>
+            <div class="tree-canvas" id="tree-view" style="display: none;"></div>
+          </div>
         </div>
       </div>
       </div>
       
-      <!-- Interface d'administration -->
+      <!-- Bouton flottant éditeur -->
+      <button class="editor-toggle" id="editor-toggle" onclick="graphEditor.togglePanel()">⚙️ Éditeur</button>
+
+      <!-- Éditeur Gouvernement -->
       <div class="admin-panel" id="admin-panel">
         <div class="admin-header">
-          <h2>⚙️ Console d'Administration</h2>
+          <h3 style="margin: 0; font-size: 16px;">🏛️ Éditeur</h3>
+          <button class="admin-close" onclick="adminManager.hideAdminPanel()">✕</button>
+        </div>
+
+        <!-- Ajout Express Supabase -->
+        <div class="graph-editor">
+          <h4>Ajout Rapide</h4>
+          <input type="text" class="editor-input" placeholder="Nom complet" id="quick-name" style="margin-bottom: 8px;">
+          <select class="editor-input" id="quick-role" style="margin-bottom: 8px;">
+            <option value="leader">Premier Ministre</option>
+            <option value="minister">Ministre</option>
+            <option value="secretary">Secrétaire d'État</option>
+          </select>
+          <button class="editor-button btn-success-editor" onclick="graphEditor.addQuick()">➕ Ajouter à Supabase</button>
+          <button class="editor-button btn-primary-editor" onclick="graphEditor.syncFromSupabase()">� Actualiser Vue</button>
+          <div style="font-size: 12px; color: #666; margin-top: 8px;">
+            <span id="count-total">0</span> personnes dans la BD
+          </div>
+        </div>
+
+        <!-- Actions Rapides -->
+        <div class="graph-editor">
+          <h4>Actions</h4>
+          <button class="editor-button btn-secondary-editor" onclick="treeInstance.refresh()">� Actualiser</button>
+          <button class="editor-button btn-secondary-editor" onclick="adminManager.exportData()">📊 Exporter</button>
+        </div>
+
+        <!-- Paramètres Affichage -->
+        <div class="graph-editor">
+          <div class="editor-section">
+            <h4>Gouvernement</h4>
+            <input type="text" class="editor-input" placeholder="Nom du gouvernement" value="Gouvernement Bayrou">
+          </div>
+          
+          <div class="editor-section">
+            <h4>Filtres</h4>
+            <input type="text" class="editor-input" placeholder="Rechercher..." id="quick-search">
+            <select class="editor-input">
+              <option>Tous les postes</option>
+              <option>Premier Ministre</option>
+              <option>Ministres d'État</option>
+              <option>Ministres</option>
+              <option>Secrétaires d'État</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Onglets originaux cachés -->
+        <div style="display: none;">
           <div class="admin-tabs">
             <div class="admin-tab active" data-tab="add">➕ Ajouter</div>
             <div class="admin-tab" data-tab="manage">📝 Gérer</div>
@@ -2504,11 +2754,28 @@
         }
       }
       
+      // Fonction helper pour compatibilité
+      function getSb() {
+        if (!window.supabase || !supabaseReady) {
+          throw new Error('Supabase not initialized yet');
+        }
+        return window.supabase;
+      }
+      
       // Démarrer l'init
       initSupabase();
       
       async function initializeApp() {
         console.log("🚀 Initialisation de l'application...");
+        console.log('Supabase ready:', supabaseReady);
+        console.log('Supabase client:', !!window.supabase);
+        console.log('URL:', window.SUPABASE_URL?.substring(0, 30) + '...');
+        
+        if (!supabaseReady || !window.supabase) {
+          console.warn('⚠️ Supabase pas encore prêt, nouvelle tentative dans 1s...');
+          setTimeout(initializeApp, 1000);
+          return;
+        }
         
         try {
 
@@ -2540,6 +2807,12 @@
               
               await Promise.race([loadPersons(), timeoutPromise]);
               console.log("✅ Données chargées avec succès");
+            } else {
+              console.log('⚠️ Fonction loadPersons non définie, chargement direct...');
+              // Essayer de charger directement via adminManager
+              if (window.adminManager) {
+                await adminManager.loadPersonsForAdmin();
+              }
             }
           } catch (error) {
             console.error("❌ Erreur lors du chargement des données:", error);
@@ -2550,6 +2823,45 @@
           console.log("⚠️ Mode dégradé : chargement des données ignoré");
           const ul = document.getElementById("list");
           if (ul) ul.textContent = "Mode hors ligne - Supabase non disponible";
+        }
+        
+        // S'assurer que l'interface principale est visible
+        const mainElements = [
+          'government-tree',
+          'tree-container', 
+          'sidebar',
+          'main-content'
+        ];
+        
+        mainElements.forEach(id => {
+          const element = document.getElementById(id);
+          if (element) {
+            element.style.display = element.id === 'sidebar' ? 'block' : 'block';
+            console.log(`✅ Élément ${id} affiché`);
+          } else {
+            console.warn(`⚠️ Élément ${id} introuvable`);
+          }
+        });
+        
+        // Initialiser les composants principaux
+        try {
+          if (typeof HierarchicalTree !== 'undefined') {
+            console.log('🌳 Initialisation de l\'arbre hiérarchique...');
+            if (!window.treeInstance) {
+              window.treeInstance = new HierarchicalTree();
+              await treeInstance.init();
+            }
+          }
+          
+          if (typeof AdminManager !== 'undefined') {
+            console.log('🛠️ Initialisation du gestionnaire admin...');
+            if (!window.adminManager) {
+              window.adminManager = new AdminManager();
+              await adminManager.init();
+            }
+          }
+        } catch (initError) {
+          console.error('❌ Erreur initialisation composants:', initError);
         }
 
         // ✅ Initialisation des composants UI TOUJOURS (même si données échouent)
@@ -3272,9 +3584,18 @@
         }
 
         async loadPersonsForAdmin() {
-          if (!window.supabase) {
-            this.showAlert('Supabase n\'est pas configuré. Vérifiez votre configuration.', 'error');
-            return;
+          if (!window.supabase || !supabaseReady) {
+            console.warn('⚠️ Supabase non initialisé, attente...');
+            // Attendre l'initialisation
+            for (let i = 0; i < 10; i++) {
+              if (supabaseReady && window.supabase) break;
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            if (!window.supabase) {
+              this.showAlert('Supabase n\'est pas configuré après attente. Vérifiez votre configuration.', 'error');
+              return;
+            }
           }
 
           try {
@@ -4241,7 +4562,11 @@
             html += `
               <div class="hierarchy-level level-1">
                 <div class="ministers-group">
-                  ${gouvernement.ministresEtat.map(ministre => this.renderPoliticalCard(ministre)).join('')}
+                  ${gouvernement.ministresEtat.map((ministre, index) => {
+                    const connectorStyle = gouvernement.ministresEtat.length > 1 ? 
+                      `<div class="hierarchy-connector" style="top: -20px; left: ${index * 200 + 100}px; width: 2px; height: 20px;"></div>` : '';
+                    return connectorStyle + this.renderPoliticalCard(ministre);
+                  }).join('')}
                 </div>
               </div>
             `;
@@ -4294,7 +4619,9 @@
           return `
             <div class="political-card ${personnalite.type} ${partyClass}" 
                  data-id="${personnalite.id}" 
-                 onclick="treeInstance.selectPolitician('${personnalite.id}')"
+                 onclick="ministerModal.show(this.dataset.id)" 
+                 style="cursor: pointer;" 
+                 title="Cliquer pour voir la fiche"
                  ondblclick="event.stopPropagation(); hideCollaborators(); treeInstance.openMinisterModal(treeInstance.findPolitician(treeInstance.treeData, '${personnalite.id}'))">
               <img class="political-photo" 
                    src="${personnalite.photo}" 
@@ -4713,6 +5040,393 @@
         treeInstance = new HierarchicalTree();
         treeInstance.init();
       }
+
+      // Éditeur graphique connecté Supabase
+      class GraphEditor {
+        async syncFromSupabase() {
+          try {
+            // Recharger les données admin
+            if (adminManager) {
+              await adminManager.loadPersonsForAdmin();
+            }
+            
+            // Forcer le rechargement de l'arbre
+            if (treeInstance) {
+              // Réinitialiser complètement les données
+              treeInstance.treeData = null;
+              treeInstance.filteredData = null;
+              
+              // Recharger depuis Supabase
+              await treeInstance.loadData();
+              treeInstance.render();
+            }
+            
+            this.updateStats();
+            console.log('✅ Graphique mis à jour avec nouvelles données');
+          } catch (error) {
+            console.error('❌ Erreur sync:', error);
+          }
+        }
+
+        async addQuick() {
+          const name = document.getElementById('quick-name')?.value.trim();
+          const role = document.getElementById('quick-role')?.value;
+          
+          if (!name || !role) {
+            alert('Nom et rôle sont requis');
+            return;
+          }
+
+          try {
+            console.log('Ajout en cours...', { name, role });
+            
+            const { data, error } = await supabase.from('persons').insert([{
+              full_name: name,
+              role: role,
+              photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+              created_at: new Date().toISOString()
+            }]).select();
+            
+            if (error) throw error;
+            
+            // Reset le formulaire
+            document.getElementById('quick-name').value = '';
+            document.getElementById('quick-role').value = 'minister';
+            
+            // Masquer le panneau
+            this.hideQuickAdd();
+            
+            // Synchroniser avec délai plus long
+            console.log('Personne ajoutée, synchronisation...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await this.syncFromSupabase();
+            
+            alert('Personne ajoutée avec succès!');
+            
+          } catch (error) {
+            console.error('Erreur ajout:', error);
+            alert('Erreur: ' + error.message);
+          }
+        }
+
+        updateStats() {
+          const totalEl = document.getElementById('count-total');
+          const ministersEl = document.getElementById('count-ministers');
+          
+          if (totalEl && adminManager?.persons) {
+            totalEl.textContent = adminManager.persons.length;
+            ministersEl.textContent = adminManager.persons.filter(p => p.role !== 'secretary').length;
+          }
+        }
+
+        addPersonForm() {
+          adminManager?.switchTab('add');
+        }
+
+        editPerson(personId) {
+          if (adminManager) {
+            adminManager.editPerson(personId);
+            this.togglePanel(true);
+          }
+        }
+
+        togglePanel(show) {
+          const panel = document.getElementById('admin-panel');
+          const toggle = document.getElementById('editor-toggle');
+          
+          if (show || panel.style.display === 'none') {
+            panel.style.display = 'block';
+            toggle.textContent = '✕ Fermer';
+          } else {
+            panel.style.display = 'none';
+            toggle.textContent = '⚙️ Éditeur';
+          }
+        }
+      }
+
+      // Ajouter méthodes d'édition à GraphEditor
+      GraphEditor.prototype.editPerson = function(personId) {
+        if (adminManager) {
+          adminManager.editPerson(personId);
+          this.togglePanel(true);
+        }
+      };
+
+      GraphEditor.prototype.togglePanel = function(show) {
+        const panel = document.getElementById('admin-panel');
+        const toggle = document.getElementById('editor-toggle');
+        
+        if (show || panel.style.display === 'none') {
+          panel.style.display = 'block';
+          toggle.textContent = '✕ Fermer';
+        } else {
+          panel.style.display = 'none';
+          toggle.textContent = '⚙️ Éditeur';
+        }
+      };
+
+      const graphEditor = new GraphEditor();
+
+      // Gestionnaire de canvas zoomable
+      class TreeCanvas {
+        constructor() {
+          this.scale = 1;
+          this.translateX = 0;
+          this.translateY = 0;
+          this.isDragging = false;
+          this.isSpacePressed = false;
+          this.lastX = 0;
+          this.lastY = 0;
+          this.init();
+        }
+
+        init() {
+          const viewport = document.querySelector('.tree-viewport');
+          const canvas = document.getElementById('tree-view');
+          
+          // Événements clavier
+          document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+              e.preventDefault();
+              this.isSpacePressed = true;
+              viewport.style.cursor = 'grab';
+            }
+          });
+
+          document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') {
+              this.isSpacePressed = false;
+              viewport.style.cursor = 'default';
+            }
+          });
+
+          // Événements souris
+          viewport.addEventListener('mousedown', (e) => {
+            if (this.isSpacePressed) {
+              this.isDragging = true;
+              this.lastX = e.clientX;
+              this.lastY = e.clientY;
+              viewport.style.cursor = 'grabbing';
+            }
+          });
+
+          document.addEventListener('mousemove', (e) => {
+            if (this.isDragging && this.isSpacePressed) {
+              const deltaX = e.clientX - this.lastX;
+              const deltaY = e.clientY - this.lastY;
+              this.translateX += deltaX;
+              this.translateY += deltaY;
+              this.lastX = e.clientX;
+              this.lastY = e.clientY;
+              this.updateTransform();
+            }
+          });
+
+          document.addEventListener('mouseup', () => {
+            this.isDragging = false;
+            if (this.isSpacePressed) {
+              viewport.style.cursor = 'grab';
+            }
+          });
+
+          // Échap pour sortir du plein écran
+          document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.fullscreenElement) {
+              document.exitFullscreen();
+            }
+          });
+
+          // Zoom avec molette
+          viewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            this.scale *= delta;
+            this.scale = Math.max(0.3, Math.min(3, this.scale));
+            this.updateTransform();
+          });
+        }
+
+        updateTransform() {
+          const canvas = document.getElementById('tree-view');
+          canvas.style.transform = `scale(${this.scale}) translate(${this.translateX / this.scale}px, ${this.translateY / this.scale}px)`;
+          document.getElementById('zoom-level').textContent = Math.round(this.scale * 100) + '%';
+        }
+
+        zoomIn() {
+          this.scale = Math.min(3, this.scale * 1.2);
+          this.updateTransform();
+        }
+
+        zoomOut() {
+          this.scale = Math.max(0.3, this.scale / 1.2);
+          this.updateTransform();
+        }
+
+        resetView() {
+          this.scale = 1;
+          this.translateX = 0;
+          this.translateY = 0;
+          this.updateTransform();
+        }
+
+        toggleFullscreen() {
+          const container = document.getElementById('tree-container');
+          
+          if (!document.fullscreenElement) {
+            container.requestFullscreen().catch(err => {
+              console.error('Erreur plein écran:', err);
+            });
+          } else {
+            document.exitFullscreen();
+          }
+        }
+      }
+
+      // Gestionnaire de modale ministre
+      class MinisterModal {
+        show(personId) {
+          console.log('Tentative affichage fiche pour ID:', personId);
+          
+          // Chercher la personne dans plusieurs sources
+          let person = null;
+          
+          // 1. Dans les données de l'arbre hiérarchique
+          if (treeInstance?.treeData) {
+            person = this.findPersonInTree(treeInstance.treeData, personId);
+          }
+          
+          // 2. Dans adminManager si pas trouvé
+          if (!person && adminManager?.persons) {
+            person = adminManager.persons.find(p => p.id == personId);
+          }
+          
+          // 3. Dans personsData de treeInstance si pas trouvé
+          if (!person && treeInstance?.personsData) {
+            person = treeInstance.personsData.find(p => p.id == personId);
+          }
+          
+          if (!person) {
+            console.error('Personne non trouvée pour ID:', personId);
+            console.log('Sources disponibles:', {
+              treeData: treeInstance?.treeData,
+              adminPersons: adminManager?.persons?.length,
+              personsData: treeInstance?.personsData?.length
+            });
+            return;
+          }
+
+          console.log('Personne trouvée:', person);
+          
+          // Récupérer les éléments de la modale
+          const modalName = document.getElementById('modal-name');
+          const modalFunction = document.getElementById('modal-function');
+          const modalParty = document.getElementById('modal-party');
+          const modalPhoto = document.getElementById('modal-photo');
+          const modalDescription = document.getElementById('modal-description');
+          
+          // Remplir les données (gérer les différents formats)
+          if (modalName) {
+            const name = person.full_name || person.nom + ' ' + person.prenom || person.prenom + ' ' + person.nom || 'Nom inconnu';
+            modalName.textContent = name;
+          }
+          
+          if (modalFunction) {
+            const role = person.fonction || this.getRoleLabel(person.role) || person.type || 'Fonction inconnue';
+            modalFunction.textContent = role;
+          }
+          
+          if (modalParty) {
+            const party = person.party || person.parti || 'Non défini';
+            modalParty.textContent = party;
+            modalParty.style.backgroundColor = this.getPartyColor(party);
+          }
+          
+          if (modalPhoto) {
+            const photo = person.photo_url || person.photo || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face';
+            modalPhoto.src = photo;
+          }
+          
+          if (modalDescription) {
+            const desc = person.description || 'Aucune description disponible.';
+            modalDescription.textContent = desc;
+          }
+          
+          // Afficher la modale
+          const modal = document.getElementById('minister-modal');
+          if (modal) {
+            modal.setAttribute('data-politician-id', personId);
+            modal.classList.add('active');
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            console.log('Modale affichée pour:', person.full_name || person.nom);
+          } else {
+            console.error('Élément minister-modal introuvable');
+          }
+        }
+
+        findPersonInTree(treeData, personId) {
+          if (!treeData) {
+            console.log('Pas de treeData disponible');
+            return null;
+          }
+          
+          console.log('Recherche ID', personId, 'dans:', Object.keys(treeData));
+          
+          // Vérifier Premier Ministre
+          if (treeData.premierMinistre?.id == personId) {
+            console.log('Trouvé Premier Ministre:', treeData.premierMinistre);
+            return treeData.premierMinistre;
+          }
+          
+          // Vérifier dans tous les groupes
+          const groups = ['ministresEtat', 'ministres', 'secretairesEtat'];
+          for (const group of groups) {
+            if (treeData[group] && Array.isArray(treeData[group])) {
+              console.log(`Recherche dans ${group} (${treeData[group].length} éléments)`);
+              const found = treeData[group].find(p => p.id == personId || p.id === personId);
+              if (found) {
+                console.log('Personne trouvée dans', group, ':', found);
+                return found;
+              }
+            }
+          }
+          
+          console.log('Personne ID', personId, 'non trouvée dans l\'arbre');
+          return null;
+        }
+
+        close() {
+          const modal = document.getElementById('minister-modal');
+          modal.classList.remove('active');
+          modal.style.display = 'none';
+        }
+
+        getRoleLabel(role) {
+          const labels = {
+            'leader': 'Premier Ministre',
+            'minister-state': 'Ministre d\'État',
+            'minister': 'Ministre',
+            'secretary': 'Secrétaire d\'État'
+          };
+          return labels[role] || 'Ministre';
+        }
+
+        getPartyColor(party) {
+          const colors = {
+            'Renaissance': '#FFD23F',
+            'MoDem': '#FF6B35',
+            'LR': '#1F4E79',
+            'PS': '#FF1493',
+            'EELV': '#00C851',
+            'RN': '#000080',
+            'LFI': '#FF0000'
+          };
+          return colors[party] || '#666';
+        }
+      }
+
+      const treeCanvas = new TreeCanvas();
+      const ministerModal = new MinisterModal();
       
       // Fonctions pour le modal ministre
       function closeMinisterModal() {
@@ -4823,9 +5537,89 @@
       </div>
     </div>
     
+    <!-- Modale fiche ministre unifiée -->
+    <div class="minister-modal" id="minister-modal">
+      <div class="minister-modal-content">
+        <div class="minister-modal-header">
+          <img class="minister-modal-photo" id="modal-photo" src="" alt="">
+          <div class="minister-modal-info">
+            <h2 id="modal-name"></h2>
+            <h3 id="modal-function"></h3>
+            <div class="minister-modal-party" id="modal-party"></div>
+          </div>
+          <button class="minister-modal-close" onclick="ministerModal.close()">×</button>
+        </div>
+        <div class="minister-modal-body">
+          <div class="minister-modal-section">
+            <h4>📋 Description</h4>
+            <p id="modal-description">Aucune description disponible.</p>
+          </div>
+          
+          <div class="minister-modal-section">
+            <h4>🔧 Actions</h4>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button class="btn-admin btn-warning" onclick="editMinisterFromModal()">
+                ✏️ Modifier
+              </button>
+              <button class="btn-admin btn-primary" onclick="viewInHierarchy()">
+                🎯 Voir dans l'arbre
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Footer avec logo RP -->
     <div class="rp-footer">
       <img src="LogoRP&co bleu sans point.png" alt="Rumeur Publique" title="Powered by Rumeur Publique" />
     </div>
+    
+    <!-- Script de debug temporaire -->
+    <script>
+      // Debug - Forcer l'affichage après chargement
+      setTimeout(() => {
+        console.log('🔧 DEBUG: Vérification interface après 3s');
+        
+        // Vérifier si l'interface principale est visible
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        const govTree = document.getElementById('government-tree');
+        
+        console.log('États des éléments:', {
+          sidebar: sidebar ? getComputedStyle(sidebar).display : 'inexistant',
+          mainContent: mainContent ? getComputedStyle(mainContent).display : 'inexistant', 
+          govTree: govTree ? getComputedStyle(govTree).display : 'inexistant'
+        });
+        
+        // Forcer l'affichage si caché
+        if (sidebar && getComputedStyle(sidebar).display === 'none') {
+          sidebar.style.display = 'block';
+          console.log('✅ Sidebar forcée visible');
+        }
+        
+        if (mainContent && getComputedStyle(mainContent).display === 'none') {
+          mainContent.style.display = 'block';  
+          console.log('✅ Main content forcé visible');
+        }
+        
+        if (govTree && getComputedStyle(govTree).display === 'none') {
+          govTree.style.display = 'block';
+          console.log('✅ Government tree forcé visible');
+        }
+        
+        // Initialiser l'arbre si pas fait
+        if (typeof HierarchicalTree !== 'undefined' && !window.treeInstance) {
+          try {
+            console.log('🌳 Tentative initialisation arbre...');
+            window.treeInstance = new HierarchicalTree();
+            treeInstance.init();
+          } catch (e) {
+            console.error('❌ Erreur init arbre:', e);
+          }
+        }
+        
+      }, 3000);
+    </script>
   </body>
 </html>
