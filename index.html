@@ -399,7 +399,43 @@
         .rp-footer img {
           height: 25px;
         }
-      }      body.sidebar-open {
+      }
+      
+      /* Authentification discrète */
+      .auth-discrete {
+        position: absolute;
+        top: 75px;
+        right: 20px;
+        background: white;
+        padding: 12px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        border: 1px solid #e1e5e9;
+        z-index: 1500;
+        animation: discreteSlideIn 0.3s ease;
+      }
+
+      @keyframes discreteSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .auth-discrete input:focus {
+        outline: none;
+        border-color: #28a745;
+      }
+
+      .auth-discrete button:hover {
+        background: #218838;
+      }
+      
+      body.sidebar-open {
         margin-left: 300px;
       }
       
@@ -440,6 +476,16 @@
         h1 {
           font-size: 1.8em;
           letter-spacing: 1px;
+        }
+        
+        .auth-discrete {
+          right: 10px;
+          left: 10px;
+          max-width: calc(100% - 20px);
+        }
+        
+        .auth-discrete input {
+          width: 120px;
         }
       }
       
@@ -1638,6 +1684,19 @@
         <span id="connection-status" class="status-indicator">🔗 Vérification...</span>
         <button id="logout-btn" class="auth-btn" style="display: none;">Se déconnecter</button>
       </div>
+      
+      <!-- Authentification discrète pour contributeurs -->
+      <div class="auth-discrete" id="auth-discrete" style="display: none;">
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 12px;">
+          <input type="email" id="discrete-email" placeholder="Email contributeur" 
+                 style="padding: 5px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; width: 160px;">
+          <button id="discrete-connect" onclick="discreteAuth()" 
+                  style="padding: 5px 12px; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer;">
+            Connexion
+          </button>
+        </div>
+        <div id="discrete-status" style="font-size: 10px; color: #666; margin-top: 2px;"></div>
+      </div>
     </div>
 
     <!-- Sidebar -->
@@ -2334,6 +2393,66 @@
         document.getElementById('admin-panel').classList.add('visible');
       }
 
+      // Authentification discrète pour contributeurs
+      let discreteAuthMode = false;
+
+      async function discreteAuth() {
+        const email = document.getElementById('discrete-email').value.trim();
+        const statusEl = document.getElementById('discrete-status');
+        
+        if (!email) {
+          statusEl.textContent = 'Veuillez entrer votre email';
+          statusEl.style.color = '#dc3545';
+          return;
+        }
+        
+        if (!window.supabase) {
+          statusEl.textContent = 'Supabase non configuré';
+          statusEl.style.color = '#dc3545';
+          return;
+        }
+        
+        try {
+          statusEl.textContent = 'Envoi du lien magique...';
+          statusEl.style.color = '#007bff';
+          
+          const { error } = await window.supabase.auth.signInWithOtp({
+            email: email,
+            options: {
+              emailRedirectTo: window.location.origin + window.location.pathname
+            }
+          });
+          
+          if (error) throw error;
+          
+          statusEl.textContent = 'Lien de connexion envoyé ! Vérifiez vos emails.';
+          statusEl.style.color = '#28a745';
+          
+          // Masquer le formulaire après envoi
+          setTimeout(() => {
+            hideDiscreteAuth();
+          }, 3000);
+          
+        } catch (error) {
+          console.error('Erreur connexion:', error);
+          statusEl.textContent = 'Erreur: ' + error.message;
+          statusEl.style.color = '#dc3545';
+        }
+      }
+
+      function showDiscreteAuth() {
+        discreteAuthMode = true;
+        document.getElementById('auth-discrete').style.display = 'block';
+        document.getElementById('discrete-email').focus();
+      }
+
+      function hideDiscreteAuth() {
+        discreteAuthMode = false;
+        document.getElementById('auth-discrete').style.display = 'none';
+        document.getElementById('discrete-email').value = '';
+        document.getElementById('discrete-status').textContent = '';
+      }
+
       // Initialisation au chargement de la page
       document.addEventListener('DOMContentLoaded', () => {
         initSidebar();
@@ -2390,6 +2509,34 @@
             }
           });
         }
+        
+        // Raccourci clavier discret pour afficher l'auth (Ctrl+Shift+L)
+        document.addEventListener('keydown', (e) => {
+          if (e.ctrlKey && e.shiftKey && e.key === 'L') {
+            e.preventDefault();
+            if (!discreteAuthMode) {
+              showDiscreteAuth();
+            } else {
+              hideDiscreteAuth();
+            }
+          }
+          
+          // Échap pour fermer
+          if (e.key === 'Escape' && discreteAuthMode) {
+            hideDiscreteAuth();
+          }
+        });
+
+        // Double-clic sur le logo pour afficher l'auth
+        const logoElement = document.querySelector('.logo');
+        if (logoElement) {
+          logoElement.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            if (!discreteAuthMode) {
+              showDiscreteAuth();
+            }
+          });
+        }
       });
     </script>
 
@@ -2439,7 +2586,7 @@
               this.currentUser = null;
               this.userRole = null;
               this.hideAdminPanel();
-              this.updateConnectionStatus('disconnected', '👁️ Visiteur');
+              this.updateConnectionStatus('disconnected', '👁️ Visiteur • Double-clic sur logo pour connexion');
               return;
             }
 
@@ -2459,6 +2606,11 @@
             if (user) {
               console.log('Contributeur autorisé connecté:', user.email);
               
+              // Masquer l'auth discrète si elle est affichée
+              if (typeof hideDiscreteAuth === 'function') {
+                hideDiscreteAuth();
+              }
+              
               try {
                 // Récupérer le rôle de l'utilisateur
                 const { data: roleData, error: roleError } = await window.supabase
@@ -2476,7 +2628,7 @@
                 }
                 
                 console.log('Rôle contributeur:', this.userRole);
-                this.updateConnectionStatus('connected', `✅ Contributeur: ${user.email.split('@')[0]}`);
+                this.updateConnectionStatus('connected', `✅ ${user.email.split('@')[0]} (${this.userRole})`);
                 
                 // Toujours afficher l'interface d'admin pour les contributeurs autorisés
                 document.getElementById('admin-panel').classList.add('visible');
@@ -2503,6 +2655,7 @@
               console.log('Aucun utilisateur connecté');
               this.userRole = null;
               this.hideAdminPanel();
+              this.updateConnectionStatus('disconnected', '👁️ Visiteur • Ctrl+Shift+L pour connexion');
             }
           } catch (error) {
             console.error('Erreur générale lors de la vérification des permissions:', error);
